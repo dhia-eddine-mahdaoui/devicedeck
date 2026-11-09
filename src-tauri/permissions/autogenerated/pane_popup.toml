@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pane-popup"
+description = "Enables the pane_popup command without any pre-configured scope."
+commands.allow = ["pane_popup"]
+
+[[permission]]
+identifier = "deny-pane-popup"
+description = "Denies the pane_popup command without any pre-configured scope."
+commands.deny = ["pane_popup"]

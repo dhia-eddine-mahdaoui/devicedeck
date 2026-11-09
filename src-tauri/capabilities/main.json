@@ -1,0 +1,24 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "The DeviceDeck interface",
+  "windows": ["main"],
+  "webviews": ["ui"],
+  "permissions": [
+    "core:default",
+    "allow-pane-open",
+    "allow-pane-layout",
+    "allow-pane-eval",
+    "allow-pane-navigate",
+    "allow-pane-close",
+    "allow-pane-popup",
+    "allow-pick-html-file",
+    "allow-dd-event",
+    "allow-pane-cdp",
+    "allow-pane-devtools",
+    "allow-pane-raise",
+    "allow-save-screenshot",
+    "allow-open-path",
+    "allow-mcp-reply"
+  ]
+}

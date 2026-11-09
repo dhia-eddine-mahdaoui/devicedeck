@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pane-cdp"
+description = "Enables the pane_cdp command without any pre-configured scope."
+commands.allow = ["pane_cdp"]
+
+[[permission]]
+identifier = "deny-pane-cdp"
+description = "Denies the pane_cdp command without any pre-configured scope."
+commands.deny = ["pane_cdp"]

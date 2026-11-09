@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pane-navigate"
+description = "Enables the pane_navigate command without any pre-configured scope."
+commands.allow = ["pane_navigate"]
+
+[[permission]]
+identifier = "deny-pane-navigate"
+description = "Denies the pane_navigate command without any pre-configured scope."
+commands.deny = ["pane_navigate"]

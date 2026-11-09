@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "previews",
+  "description": "Device previews may only report scrolling, clicks and page changes back to the interface",
+  "webviews": ["pane-*", "popup-*"],
+  "remote": {
+    "urls": ["https://*", "http://*", "https://*:*", "http://*:*"]
+  },
+  "permissions": ["allow-dd-event"]
+}

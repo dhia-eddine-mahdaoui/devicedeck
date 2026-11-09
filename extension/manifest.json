@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "DeviceDeck Connector",
+  "version": "1.0.0",
+  "description": "Lets DeviceDeck make any website believe it is opened on the phone, tablet or computer you pick.",
+  "minimum_chrome_version": "111",
+  "permissions": ["declarativeNetRequest", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["helper.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["bridge.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ]
+}

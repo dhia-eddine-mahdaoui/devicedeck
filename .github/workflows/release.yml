@@ -1,0 +1,36 @@
+name: Windows release
+
+# Run it from the "Actions" tab (Run workflow) with a version like v1.0.1:
+# it builds the .exe and .msi installers and publishes them as a release.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag, e.g. v1.0.1"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: dtolnay/rust-toolchain@1.91.0
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.version }}
+          releaseName: DeviceDeck ${{ github.event.inputs.version }}
+          releaseBody: "Download **DeviceDeck_x64-setup.exe** (recommended) or the **.msi**, run it, done."
+          releaseDraft: false

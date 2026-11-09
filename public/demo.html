@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script src="devicedeck-helper.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Device test page</title>
+  <style>
+    :root { --bg: #f6f7fb; --card: #fff; --text: #141826; --muted: #5d6478; --line: #e3e6ef; --accent: #2563eb; --ok: #0f9f6e; --no: #c2410c; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #121315; --card: #1b1c1f; --text: #e6e7ea; --muted: #9ea2a9; --line: #2c2e32; --accent: #6ea0ff; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    header { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--line); }
+    .logo { font-weight: 800; letter-spacing: -.02em; }
+    nav { display: flex; gap: 16px; }
+    nav a { color: var(--muted); text-decoration: none; font-weight: 500; }
+    nav a.on, nav a:hover { color: var(--accent); }
+    .burger { display: none; border: 1px solid var(--line); background: none; color: var(--text); border-radius: 8px; padding: 6px 10px; font: inherit; }
+    .hero { padding: 36px 20px 24px; text-align: center; }
+    .hero small { text-transform: uppercase; letter-spacing: .12em; font-weight: 700; color: var(--muted); font-size: 11px; }
+    .hero h1 { margin: 6px 0 4px; font-size: clamp(26px, 5vw, 44px); letter-spacing: -.03em; line-height: 1.1; }
+    .hero p { margin: 0; color: var(--muted); }
+    .icon { font-size: 54px; line-height: 1; margin-bottom: 8px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 0 20px 40px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; }
+    .card h2 { margin: 0 0 10px; font-size: 15px; }
+    dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13.5px; }
+    dt { color: var(--muted); }
+    dd { margin: 0; font-weight: 600; word-break: break-word; }
+    code.ua { display: block; font-size: 12px; padding: 10px; border-radius: 8px; background: var(--bg); word-break: break-all; }
+    .yes { color: var(--ok); } .no { color: var(--no); }
+    .bp { display: flex; gap: 6px; flex-wrap: wrap; }
+    .bp span { padding: 3px 10px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+    .bp span.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .try { display: grid; gap: 10px; }
+    .try input { padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; }
+    .try button { padding: 10px 14px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+    .counter { font-weight: 700; }
+    .touchpad { height: 110px; border: 2px dashed var(--line); border-radius: 12px; display: grid; place-items: center; color: var(--muted); user-select: none; touch-action: none; }
+    .long p { color: var(--muted); }
+    .only-touch { display: none; } .only-mouse { display: inline; }
+    @media (hover: none) and (pointer: coarse) { .only-touch { display: inline; } .only-mouse { display: none; } }
+    @media (max-width: 640px) {
+      nav { display: none; }
+      .burger { display: block; }
+      nav.open { display: flex; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="logo">Sample&nbsp;Site</span>
+    <button class="burger" id="burger" aria-label="Menu">☰ Menu</button>
+    <nav id="nav">
+      <a href="demo.html" id="l1">Home</a>
+      <a href="demo.html?page=2" id="l2">Second page</a>
+      <a href="#try" id="l3">Try sync</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="icon" id="icon">💻</div>
+    <small id="page-label">Test page</small>
+    <h1 id="headline">Checking your device…</h1>
+    <p id="subline"></p>
+  </section>
+
+  <main>
+    <section class="card">
+      <h2>What this page sees</h2>
+      <dl id="facts"></dl>
+    </section>
+    <section class="card">
+      <h2>Browser name sent to websites (user agent)</h2>
+      <code class="ua" id="ua"></code>
+      <h2 style="margin-top:14px">Layout size (breakpoints)</h2>
+      <div class="bp" id="bp"></div>
+    </section>
+    <section class="card" id="try">
+      <h2>Try the sync</h2>
+      <div class="try">
+        <p style="margin:0;color:var(--muted)"><span class="only-mouse">Click</span><span class="only-touch">Tap</span> the button or type in the box — every other device follows.</p>
+        <input id="field" placeholder="Type something…" />
+        <button id="btn">Tapped <span class="counter" id="count">0</span> times</button>
+        <div class="touchpad" id="pad">Touch / click area</div>
+      </div>
+    </section>
+    <section class="card long">
+      <h2>Scroll test</h2>
+      <p>Scroll any device and the others scroll with it. This block is just here to make the page long enough.</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+      <p>Donec ullamcorper nulla non metus auctor fringilla. Maecenas faucibus mollis interdum.</p>
+      <p>Vestibulum id ligula porta felis euismod semper. Cras mattis consectetur purus sit amet fermentum.</p>
+      <p>Aenean lacinia bibendum nulla sed consectetur. Nullam quis risus eget urna mollis ornare vel eu leo.</p>
+      <p>Etiam porta sem malesuada magna mollis euismod. Sed posuere consectetur est at lobortis.</p>
+      <p>Curabitur blandit tempus porttitor. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.</p>
+      <p>Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo.</p>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var ua = navigator.userAgent;
+      var page = new URLSearchParams(location.search).get('page');
+      document.getElementById('page-label').textContent = page ? 'Second page' : 'Test page';
+      document.getElementById(page ? 'l2' : 'l1').classList.add('on');
+
+      function detect() {
+        var os = 'Unknown system', kind = 'computer', icon = '💻', browser = 'Unknown browser';
+        var touch = navigator.maxTouchPoints > 0;
+        if (/iPhone/.test(ua)) { os = 'iOS'; kind = 'phone'; icon = '📱'; }
+        else if (/iPad/.test(ua) || (/Macintosh/.test(ua) && touch)) { os = 'iPadOS'; kind = 'tablet'; icon = '📱'; }
+        else if (/Android/.test(ua)) { os = 'Android'; kind = /Mobile/.test(ua) ? 'phone' : 'tablet'; icon = '📱'; }
+        else if (/CrOS/.test(ua)) { os = 'ChromeOS'; }
+        else if (/Windows/.test(ua)) { os = 'Windows'; if (touch) { kind = 'tablet'; } }
+        else if (/Macintosh/.test(ua)) { os = 'macOS'; }
+        else if (/Linux/.test(ua)) { os = 'Linux'; icon = '🖥️'; }
+        if (/SamsungBrowser/.test(ua)) browser = 'Samsung Internet';
+        else if (/Edg(e|A|iOS)?\//.test(ua)) browser = 'Edge';
+        else if (/Firefox|FxiOS/.test(ua)) browser = 'Firefox';
+        else if (/Chrome|CriOS/.test(ua)) browser = 'Chrome';
+        else if (/Safari/.test(ua)) browser = 'Safari';
+        if (kind === 'tablet') icon = '📲';
+        if (kind === 'computer' && screen.width >= 1900) icon = '🖥️';
+        return { os: os, kind: kind, icon: icon, browser: browser, touch: touch };
+      }
+      function mq(q) { return window.matchMedia(q).matches; }
+      function yn(v) { return '<span class="' + (v ? 'yes' : 'no') + '">' + (v ? 'Yes' : 'No') + '</span>'; }
+
+      function render() {
+        var d = detect();
+        document.getElementById('icon').textContent = d.icon;
+        document.getElementById('headline').textContent = 'You are on a ' + d.os + ' ' + d.kind;
+        document.getElementById('subline').textContent = 'using ' + d.browser + (window.__deviceDeck ? ' — faked by DeviceDeck' : '');
+        var dark = mq('(prefers-color-scheme: dark)');
+        var rows = [
+          ['System', d.os],
+          ['Browser', d.browser],
+          ['Platform', navigator.platform || '—'],
+          ['Screen', screen.width + ' × ' + screen.height],
+          ['Window', window.innerWidth + ' × ' + window.innerHeight],
+          ['Pixel ratio', window.devicePixelRatio],
+          ['Touch screen', yn(d.touch) + ' (' + navigator.maxTouchPoints + ' points)'],
+          ['Finger (coarse pointer)', yn(mq('(pointer: coarse)'))],
+          ['Can hover', yn(mq('(hover: hover)'))],
+          ['Retina (2x+)', yn(mq('(min-resolution: 2dppx)'))],
+          ['Orientation', (screen.orientation && screen.orientation.type) || (innerWidth > innerHeight ? 'landscape' : 'portrait')],
+          ['Colour mode', dark ? 'Dark' : 'Light'],
+          ['Client hints', navigator.userAgentData ? navigator.userAgentData.platform + (navigator.userAgentData.mobile ? ', mobile' : ', not mobile') : 'not sent (Safari/Firefox)'],
+        ];
+        document.getElementById('facts').innerHTML = rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; }).join('');
+        document.getElementById('ua').textContent = ua;
+        var w = window.innerWidth;
+        var bps = [['xs', 0], ['sm', 576], ['md', 768], ['lg', 992], ['xl', 1200], ['xxl', 1400]];
+        var cur = bps.filter(function (b) { return w >= b[1]; }).pop()[0];
+        document.getElementById('bp').innerHTML = bps.map(function (b) { return '<span class="' + (b[0] === cur ? 'on' : '') + '">' + b[0] + ' ≥' + b[1] + '</span>'; }).join('');
+      }
+      render();
+      window.addEventListener('resize', render);
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+
+      var count = 0;
+      document.getElementById('btn').addEventListener('click', function () { count++; document.getElementById('count').textContent = count; });
+      document.getElementById('burger').addEventListener('click', function () { document.getElementById('nav').classList.toggle('open'); });
+      var pad = document.getElementById('pad');
+      pad.addEventListener('touchstart', function () { pad.textContent = 'Touch detected 👆'; });
+      pad.addEventListener('mousedown', function () { if (!navigator.maxTouchPoints) pad.textContent = 'Mouse click detected 🖱️'; });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pane-devtools"
+description = "Enables the pane_devtools command without any pre-configured scope."
+commands.allow = ["pane_devtools"]
+
+[[permission]]
+identifier = "deny-pane-devtools"
+description = "Denies the pane_devtools command without any pre-configured scope."
+commands.deny = ["pane_devtools"]
