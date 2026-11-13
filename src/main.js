@@ -495,7 +495,7 @@ function nativeLayoutLoop() {
       snapshotEntry(entry).finally(() => { entry.snapping = false; });
     }
 
-    const hidden = entry.el.hidden || overlay || entry.covered || r.width < 2
+    const hidden = entry.el.hidden || overlay || entry.covered || entry.glide || r.width < 2
       || ix2 - ix1 < 1 || iy2 - iy1 < 1;
     const item = {
       label: entry.label,
@@ -1445,6 +1445,46 @@ function applyCanvas() {
   canvasSaveTimer = setTimeout(save, 300);
 }
 
+// Device views are separate windows: moved every frame they trail the panels and tear, and zooming
+// makes them lay their page out again each step. So while things move, each shows a picture of
+// itself (which moves exactly with its panel) and the live view comes back once it stops.
+let glideTimer = 0;
+let gliding = null; // the entries showing a picture while things move
+function glide(list) {
+  if (!DESKTOP) return;
+  if (!gliding) {
+    gliding = new Set();
+    for (const entry of list || entries.values()) {
+      if (!entry.label || entry.el.hidden || entry.covered || entry.covering) continue;
+      gliding.add(entry);
+      const set = gliding;
+      // Until its picture is ready the live view keeps following.
+      snapshotEntry(entry).finally(() => { if (gliding === set && entry.el.querySelector('.screen img.freeze')) entry.glide = true; });
+    }
+  }
+  clearTimeout(glideTimer);
+  glideTimer = setTimeout(endGlide, 180);
+}
+function endGlide() {
+  const done = gliding;
+  gliding = null;
+  if (!done) return;
+  for (const entry of done) {
+    if (!entry.glide) continue;
+    entry.glide = false;
+    entry.lastLayout = null;
+    // Give the view a moment to draw in its new place before the picture goes.
+    setTimeout(() => { if (!gliding?.has(entry) && !entry.covered && !entry.covering && !overlayOpen()) dropSnapshot(entry); }, 160);
+  }
+}
+
+// Canvas moves from the wheel and pointer: at most one update per frame.
+let canvasFrame = 0;
+function moveCanvas() {
+  glide();
+  if (!canvasFrame) canvasFrame = requestAnimationFrame(() => { canvasFrame = 0; applyCanvas(); });
+}
+
 // Zoom keeping the canvas point under (px, py) (relative to the canvas) where it is.
 function zoomAt(z, px, py) {
   const c = canvas();
@@ -1453,7 +1493,7 @@ function zoomAt(z, px, py) {
   c.x = px - ((px - c.x) / c.z) * nz;
   c.y = py - ((py - c.y) / c.z) * nz;
   c.z = Math.round(nz * 1000) / 1000;
-  applyCanvas();
+  moveCanvas();
 }
 function zoomCenter(z) {
   const host = $('#panes');
@@ -1571,6 +1611,7 @@ function setupFreeMove(p, el) {
       const z = canvas().z;
       p.box.x = Math.round(bx + (ev.clientX - sx) / z);
       p.box.y = Math.round(by + (ev.clientY - sy) / z);
+      glide([entry]);
       applyBox(p, entry);
     };
     const up = () => {
@@ -1643,7 +1684,7 @@ function setupCanvas() {
     const move = (ev) => {
       c.x = Math.round(ev.clientX - sx);
       c.y = Math.round(ev.clientY - sy);
-      applyCanvas();
+      moveCanvas();
     };
     const up = () => {
       host.removeEventListener('pointermove', move);
@@ -1677,7 +1718,7 @@ function setupCanvas() {
     const c = canvas();
     c.x = Math.round(c.x - dx);
     c.y = Math.round(c.y - dy);
-    applyCanvas();
+    moveCanvas();
   }, { passive: false });
 
   const typing = (t) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
@@ -2659,6 +2700,8 @@ new ResizeObserver(() => {
   resizeQueued = true;
   requestAnimationFrame(() => { resizeQueued = false; resizeAll(); });
 }).observe($('#stage'));
+// Scrolling the Row layout sideways moves the views too.
+$('#stage').addEventListener('scroll', () => glide(), { passive: true });
 $('#zoom').value = state.zoom;
 $('#btn-frames').classList.toggle('on', state.frames);
 updateLayoutSeg();
