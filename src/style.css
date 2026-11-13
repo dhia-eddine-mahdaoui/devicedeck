@@ -40,6 +40,18 @@
   --shadow: 0 8px 24px rgba(0, 0, 0, .4);
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, .55);
   --backdrop: rgba(0, 0, 0, .55);
+
+  /* device frames: black glass around the screen, a metal edge, side buttons */
+  --fr-glass: #1a1b1e;
+  --fr-inner: #3c3e43;      /* hairline where the glass meets the edge */
+  --fr-gap: #141517;
+  --fr-edge: #45484e;       /* the metal edge */
+  --fr-button: #45484e;
+  --fr-shadow: 0 16px 36px rgba(0, 0, 0, .45);
+  --fr-base: linear-gradient(180deg, #a9acb3, #74777e);   /* laptop base */
+  --fr-base-shadow: 0 8px 18px rgba(0, 0, 0, .4);
+  --fr-notch: #5f6268;
+  --fr-stand: linear-gradient(180deg, #4d5056, #303236);  /* monitor stand */
   color-scheme: dark;
 }
 /* Settings › Theme › Light. Device frames stay dark, like the real hardware. */
@@ -75,6 +87,17 @@
   --shadow: 0 6px 20px rgba(20, 24, 31, .14);
   --shadow-lg: 0 20px 50px rgba(20, 24, 31, .22);
   --backdrop: rgba(20, 24, 31, .35);
+
+  --fr-glass: #16171a;
+  --fr-inner: #2a2c30;
+  --fr-gap: #c4c8ce;
+  --fr-edge: #a9aeb5;
+  --fr-button: #b3b8bf;
+  --fr-shadow: 0 2px 4px rgba(20, 24, 31, .08), 0 14px 32px rgba(20, 24, 31, .16);
+  --fr-base: linear-gradient(180deg, #eceef1 0%, #d3d6db 55%, #b9bdc4 100%);
+  --fr-base-shadow: 0 6px 14px rgba(20, 24, 31, .16);
+  --fr-notch: #a3a8af;
+  --fr-stand: linear-gradient(180deg, #e2e4e8, #b8bcc3);
   color-scheme: light;
 }
 
@@ -478,7 +501,8 @@ select option, select optgroup { background: var(--surface); color: var(--text);
   border: 1px solid var(--line); border-top: 0; border-radius: 0 0 var(--radius) var(--radius);
   background: #000;
 }
-.pane-body:has(.shell.framed) { background: var(--bg-1); align-items: center; }
+.pane-body:has(.shell.framed) { background: var(--frame-stage, var(--bg-1)); align-items: center; }
+:root[data-theme="light"] { --frame-stage: linear-gradient(180deg, #f7f8fa, #eceef1); }
 .pane-body .shell.plain { align-self: center; }
 
 .status-badge {
@@ -516,9 +540,9 @@ select option, select optgroup { background: var(--surface); color: var(--text);
   --bz: calc(9px * var(--s) + 3px);
   margin: 12px;
   padding: var(--bz);
-  background: #1a1b1e;
+  background: var(--fr-glass);
   border-radius: calc(var(--r) + var(--bz));
-  box-shadow: 0 0 0 1px #3c3e43, 0 0 0 3px #141517, 0 0 0 4px #45484e, 0 16px 36px rgba(0,0,0,.45);
+  box-shadow: 0 0 0 1px var(--fr-inner), 0 0 0 3px var(--fr-gap), 0 0 0 4px var(--fr-edge), var(--fr-shadow);
 }
 .shell.framed.tablet { --bz: calc(20px * var(--s) + 4px); }
 .shell.framed.phone.home { padding: calc(70px * var(--s) + 6px) calc(12px * var(--s) + 3px); border-radius: calc(54px * var(--s) + 10px); }
@@ -526,14 +550,14 @@ select option, select optgroup { background: var(--surface); color: var(--text);
 .shell.framed.phone .screen, .shell.framed.tablet .screen { border-radius: var(--r); }
 /* side buttons: power on the right, volume on the left */
 .shell.framed.phone::before, .shell.framed.phone::after {
-  content: ''; position: absolute; width: 3px; border-radius: 2px; background: #45484e; pointer-events: none;
+  content: ''; position: absolute; width: 3px; border-radius: 2px; background: var(--fr-button); pointer-events: none;
 }
 .shell.framed.phone::before { right: -6px; top: 26%; height: calc(90px * var(--s) + 8px); }
 .shell.framed.phone::after { left: -6px; top: 20%; height: calc(130px * var(--s) + 10px);
-  background: linear-gradient(#45484e 0 40%, transparent 40% 55%, #45484e 55%); }
+  background: linear-gradient(var(--fr-button) 0 40%, transparent 40% 55%, var(--fr-button) 55%); }
 .shell.framed.phone.landscape::before { right: auto; top: -6px; left: 26%; width: calc(90px * var(--s) + 8px); height: 3px; }
 .shell.framed.phone.landscape::after { left: 20%; top: auto; bottom: -6px; height: 3px; width: calc(130px * var(--s) + 10px);
-  background: linear-gradient(90deg, #45484e 0 40%, transparent 40% 55%, #45484e 55%); }
+  background: linear-gradient(90deg, var(--fr-button) 0 40%, transparent 40% 55%, var(--fr-button) 55%); }
 /* home button (iPhone SE) */
 .shell.framed.phone.home .screen::after {
   content: ''; position: absolute; left: 50%; bottom: calc(-35px * var(--s) - 3px - 25px * var(--s)); transform: translateX(-50%);
@@ -548,28 +572,28 @@ select option, select optgroup { background: var(--surface); color: var(--text);
 .shell.framed.laptop {
   margin: 12px 12px 26px;
   padding: 12px 12px 14px;
-  background: #1a1b1e; border-radius: 6px 6px 3px 3px;
-  box-shadow: 0 0 0 1px #3c3e43, 0 16px 36px rgba(0,0,0,.45);
+  background: var(--fr-glass); border-radius: 6px 6px 3px 3px;
+  box-shadow: 0 0 0 1px var(--fr-inner), 0 0 0 2px var(--fr-edge), var(--fr-shadow);
 }
 .shell.framed.laptop::after {
-  content: ''; position: absolute; left: -7%; right: -7%; bottom: -12px; height: 12px;
-  background: linear-gradient(180deg, #a9acb3, #74777e); border-radius: 0 0 14px 14px;
-  box-shadow: 0 8px 18px rgba(0,0,0,.4);
+  content: ''; position: absolute; left: -10px; right: -10px; bottom: -12px; height: 12px;
+  background: var(--fr-base); border-radius: 0 0 14px 14px;
+  box-shadow: var(--fr-base-shadow);
 }
 .shell.framed.laptop::before {
   content: ''; position: absolute; left: 50%; bottom: -12px; width: 16%; height: 5px; transform: translateX(-50%);
-  background: #5f6268; border-radius: 0 0 6px 6px; z-index: 1;
+  background: var(--fr-notch); border-radius: 0 0 6px 6px; z-index: 1;
 }
 .shell.framed.desktop {
   margin: 12px 12px 50px;
   padding: 10px 10px 18px;
-  background: #1a1b1e; border-radius: 6px 6px 3px 3px;
-  box-shadow: 0 0 0 1px #3c3e43, 0 16px 36px rgba(0,0,0,.45);
+  background: var(--fr-glass); border-radius: 6px 6px 3px 3px;
+  box-shadow: 0 0 0 1px var(--fr-inner), 0 0 0 2px var(--fr-edge), var(--fr-shadow);
 }
 .shell.framed.desktop::after {
   content: ''; position: absolute; left: 50%; bottom: -36px; transform: translateX(-50%);
   width: 70px; height: 36px;
-  background: linear-gradient(180deg, #4d5056, #303236);
+  background: var(--fr-stand);
   clip-path: polygon(30% 0, 70% 0, 82% 85%, 100% 85%, 100% 100%, 0 100%, 0 85%, 18% 85%);
 }
 
