@@ -27,4 +27,9 @@ Large changes: open an issue first so we can agree on the approach before you sp
 
 ## License of contributions
 
-DeviceDeck is source-available, not open source: it is free for private use, and public use needs permission (see [LICENSE](LICENSE)). By submitting a contribution you agree that it becomes part of DeviceDeck under that license, as described in section 3 of the [LICENSE](LICENSE). Your fork is for proposing changes back here; please don't publish or distribute it separately.
+DeviceDeck is licensed under the [GNU AGPL v3.0](LICENSE), and is also offered under a separate commercial license. So that both stay possible, by submitting a contribution you confirm that:
+
+1. you wrote it yourself (or otherwise have the right to submit it), and
+2. you license it under the AGPL v3.0, **and** you grant Dhia Mahdaoui a perpetual, worldwide, royalty-free, irrevocable right to use, modify and relicense it, including under the commercial license.
+
+You keep the copyright to your contribution.

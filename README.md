@@ -97,4 +97,10 @@ Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-© 2026 Dhia Mahdaoui. DeviceDeck is **free for private use** (personal, or internal within your company). Publishing, redistributing or offering it to the public needs permission — [open an issue](../../issues) to ask. See [LICENSE](LICENSE) for the full terms.
+© 2026 Dhia Mahdaoui. DeviceDeck is open source under the [GNU Affero General Public License v3.0](LICENSE): you can use, change and share it freely, as long as anything you distribute or host that is based on it is released under the same license with its source code.
+
+**Commercial license:** want to use DeviceDeck in a closed-source product or service, without the AGPL obligations? [Open an issue](../../issues) to ask about a commercial license.
+
+## Code signing
+
+Free code signing for the Windows installers by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org) — the application is in progress; until it is approved, the installers are unsigned (see [Install](#install)). See the [code signing policy](CODE_SIGNING.md).

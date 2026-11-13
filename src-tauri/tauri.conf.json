@@ -21,7 +21,7 @@
     "shortDescription": "Test websites as any phone, tablet or computer",
     "longDescription": "DeviceDeck shows a website side by side on iPhones, Android phones, tablets, Windows and Mac computers, and makes the site believe it is really opened on each of them.",
     "category": "DeveloperTool",
-    "copyright": "Copyright (c) 2026 Dhia Mahdaoui. Free for private use; see LICENSE.",
+    "copyright": "Copyright (c) 2026 Dhia Mahdaoui. Licensed under AGPL-3.0.",
     "licenseFile": "../LICENSE",
     "icon": [
       "icons/32x32.png",
