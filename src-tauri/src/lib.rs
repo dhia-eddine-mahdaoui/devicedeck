@@ -328,12 +328,19 @@ pub fn run() {
             extra::mcp_reply
         ])
         .setup(|app| {
-            let window = tauri::window::WindowBuilder::new(app, WINDOW_LABEL)
+            let builder = tauri::window::WindowBuilder::new(app, WINDOW_LABEL)
                 .title("DeviceDeck")
                 .inner_size(1440.0, 900.0)
                 .min_inner_size(900.0, 600.0)
-                .maximized(true)
-                .build()?;
+                .maximized(true);
+            // No separate system title bar: the tab strip is the title bar.
+            // macOS keeps its own traffic-light buttons, drawn over the tab strip;
+            // Windows and Linux get minimize / maximize / close buttons drawn by the interface.
+            #[cfg(target_os = "macos")]
+            let builder = builder.title_bar_style(tauri::TitleBarStyle::Overlay).hidden_title(true);
+            #[cfg(not(target_os = "macos"))]
+            let builder = builder.decorations(false).shadow(true);
+            let window = builder.build()?;
             let size = window.inner_size()?.to_logical::<f64>(window.scale_factor()?);
             // `DeviceDeck.exe https://example.com` opens that address straight away.
             let mut start = String::from("index.html");

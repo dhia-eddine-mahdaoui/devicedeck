@@ -9,13 +9,23 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='6' width='16' height='20' rx='3' fill='%2373777f'/%3E%3Crect x='13' y='3' width='16' height='26' rx='3' fill='%23dcdee2'/%3E%3C/svg%3E" />
   </head>
   <body>
+    <div class="win-resize" id="win-resize" hidden>
+      <i data-dir="North"></i><i data-dir="South"></i><i data-dir="West"></i><i data-dir="East"></i>
+      <i data-dir="NorthWest"></i><i data-dir="NorthEast"></i><i data-dir="SouthWest"></i><i data-dir="SouthEast"></i>
+    </div>
     <div id="app">
-      <div class="tabbar">
+      <div class="tabbar" data-tauri-drag-region>
         <div class="brand" title="DeviceDeck">
           <span class="logo" aria-hidden="true"><i></i><i></i></span>
         </div>
         <div class="tabs" id="tabs" role="tablist" aria-label="Tabs"></div>
         <button class="tab-new" id="tab-new" title="New tab (Ctrl+T)" aria-label="New tab"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="drag-space" data-tauri-drag-region></div>
+        <div class="win-controls" id="win-controls" hidden>
+          <button class="win-btn" id="win-min" title="Minimize" aria-label="Minimize"><svg viewBox="0 0 10 10"><path d="M0 5h10"/></svg></button>
+          <button class="win-btn" id="win-max" title="Maximize" aria-label="Maximize"><svg viewBox="0 0 10 10"><path class="i-max" d="M.5 .5h9v9h-9z"/><path class="i-restore" d="M2.5 .5h7v7M.5 2.5h7v7h-7z"/></svg></button>
+          <button class="win-btn win-close" id="win-close" title="Close" aria-label="Close"><svg viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10"/></svg></button>
+        </div>
       </div>
       <header class="topbar">
         <div class="nav-buttons">

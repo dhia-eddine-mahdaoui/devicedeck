@@ -122,6 +122,38 @@ kbd {
 }
 .tab-new:hover { background: var(--surface-2); color: var(--text); }
 
+/* ---------- window controls (the tab strip is the title bar) ---------- */
+.drag-space { flex: 1; align-self: stretch; min-width: 40px; }
+.win-controls { display: flex; align-self: stretch; margin-right: -6px; }
+.win-controls[hidden] { display: none; }
+.win-btn {
+  display: grid; place-items: center; width: 46px; height: 100%; padding: 0;
+  border: 0; border-radius: 0; background: none; color: var(--text-2); cursor: default;
+}
+.win-btn svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1; shape-rendering: crispEdges; }
+.win-btn:hover { background: var(--surface-2); color: var(--text); }
+.win-btn:active { background: var(--surface-3); }
+.win-close:hover { background: #c42b1c; color: #fff; }
+.win-close:active { background: #b22a1b; color: #fff; }
+.win-close svg { shape-rendering: geometricPrecision; }
+.win-btn .i-restore { display: none; }
+.maximized .win-btn .i-max { display: none; }
+.maximized .win-btn .i-restore { display: inline; }
+/* macOS draws its own traffic-light buttons over the left of the tab strip */
+.mac .tabbar { padding-left: 80px; }
+
+/* invisible resize borders (the system frame is hidden) */
+.win-resize i { position: fixed; z-index: 10000; }
+.win-resize[hidden], .maximized .win-resize { display: none; }
+.win-resize [data-dir="North"] { top: 0; left: 8px; right: 8px; height: 4px; cursor: ns-resize; }
+.win-resize [data-dir="South"] { bottom: 0; left: 8px; right: 8px; height: 4px; cursor: ns-resize; }
+.win-resize [data-dir="West"] { left: 0; top: 8px; bottom: 8px; width: 4px; cursor: ew-resize; }
+.win-resize [data-dir="East"] { right: 0; top: 8px; bottom: 8px; width: 4px; cursor: ew-resize; }
+.win-resize [data-dir="NorthWest"] { top: 0; left: 0; width: 8px; height: 8px; cursor: nwse-resize; }
+.win-resize [data-dir="NorthEast"] { top: 0; right: 0; width: 8px; height: 8px; cursor: nesw-resize; }
+.win-resize [data-dir="SouthWest"] { bottom: 0; left: 0; width: 8px; height: 8px; cursor: nesw-resize; }
+.win-resize [data-dir="SouthEast"] { bottom: 0; right: 0; width: 8px; height: 8px; cursor: nwse-resize; }
+
 /* ---------- address bar ---------- */
 .topbar {
   display: flex; align-items: center; gap: 8px;

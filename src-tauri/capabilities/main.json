@@ -2,10 +2,21 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main",
   "description": "The DeviceDeck interface",
-  "windows": ["main"],
-  "webviews": ["ui"],
+  "windows": [
+    "main"
+  ],
+  "webviews": [
+    "ui"
+  ],
   "permissions": [
     "core:default",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-internal-toggle-maximize",
+    "core:window:allow-close",
+    "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging",
+    "core:window:allow-is-maximized",
     "allow-pane-open",
     "allow-pane-layout",
     "allow-pane-eval",

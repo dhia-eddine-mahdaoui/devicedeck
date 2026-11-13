@@ -19,6 +19,38 @@ const invoke = (cmd, args) => window.__TAURI_INTERNALS__.invoke(cmd, args);
 if (DESKTOP) document.documentElement.classList.add('desktop');
 let nativeSeq = 0;
 
+/* ------------------------------------------------------------------ title bar */
+// The tab strip is the window's title bar. macOS keeps its own traffic lights (drawn over
+// the strip's left edge); Windows and Linux get minimize / maximize / close buttons here.
+(function setupTitleBar() {
+  const appWindow = DESKTOP && window.__TAURI__?.window?.getCurrentWindow?.();
+  if (!appWindow) return;
+  const root = document.documentElement;
+  if (/Macintosh|Mac OS X/.test(navigator.userAgent)) {
+    root.classList.add('mac');
+    return;
+  }
+  document.getElementById('win-controls').hidden = false;
+  document.getElementById('win-resize').hidden = false;
+  document.getElementById('win-min').addEventListener('click', () => appWindow.minimize());
+  document.getElementById('win-max').addEventListener('click', () => appWindow.toggleMaximize());
+  document.getElementById('win-close').addEventListener('click', () => appWindow.close());
+  const maxBtn = document.getElementById('win-max');
+  const syncMaximized = async () => {
+    const max = await appWindow.isMaximized().catch(() => false);
+    root.classList.toggle('maximized', max);
+    maxBtn.title = maxBtn.ariaLabel = max ? 'Restore' : 'Maximize';
+  };
+  syncMaximized();
+  appWindow.onResized(syncMaximized);
+  // Resize from the window edges (the system frame is hidden).
+  document.querySelectorAll('#win-resize [data-dir]').forEach((edge) => {
+    edge.addEventListener('mousedown', (e) => {
+      if (e.button === 0) appWindow.startResizeDragging(edge.dataset.dir);
+    });
+  });
+})();
+
 const ICONS = {
   phone: '<svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
   tablet: '<svg viewBox="0 0 24 24"><rect x="4.5" y="3" width="15" height="18" rx="2.5"/><path d="M11 18h2"/></svg>',
