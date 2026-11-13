@@ -19,10 +19,16 @@ function changesOf(body) {
   return text || 'Improvements and fixes.';
 }
 
-export function initUpdater({ openDialog, toast }) {
-  if (!window.__TAURI_INTERNALS__) return;   // plain website version: nothing to update
+/**
+ * Wires the Updates section of Settings. `openSettings(section)` shows Settings on a section.
+ * Returns `onShow`, to call whenever the Updates section comes into view.
+ */
+export function initUpdater({ openSettings, toast }) {
+  if (!window.__TAURI_INTERNALS__) return { onShow() {} };   // plain website version: nothing to update
   let pending = null;                         // the Update found by the last check
   let busy = false;
+  let current = '';                           // this app's version
+  let lastChecked = 0;                        // when this window last asked GitHub
 
   const everyDays = () => {
     const v = Number(store.get(KEY_EVERY));
@@ -31,11 +37,11 @@ export function initUpdater({ openDialog, toast }) {
   $('update-every').value = String(everyDays());
   $('update-every').addEventListener('change', (e) => store.set(KEY_EVERY, e.target.value));
 
-  window.__TAURI__?.app?.getVersion?.().then((v) => { $('update-current').textContent = v; }).catch(() => {});
+  window.__TAURI__?.app?.getVersion?.().then((v) => { current = v; }).catch(() => {});
 
   function show(update) {
     pending = update;
-    document.querySelector('.update-dot').hidden = !update;
+    document.querySelectorAll('.update-dot').forEach((d) => { d.hidden = !update; });
     $('update-new').hidden = !update;
     $('update-install').hidden = !update;
     if (update) {
@@ -52,14 +58,14 @@ export function initUpdater({ openDialog, toast }) {
     if (!quiet) $('update-status').textContent = 'Checking for updates…';
     try {
       const update = await check();
-      store.set(KEY_LAST, String(Date.now()));
+      lastChecked = Date.now();
+      store.set(KEY_LAST, String(lastChecked));
       if (update) {
         show(update);
-        if (quiet) toast(`DeviceDeck ${update.version} is available`, 10000, { label: "See what's new", fn: () => openDialog('#dlg-update') });
+        if (quiet) toast(`DeviceDeck ${update.version} is available`, 10000, { label: "See what's new", fn: () => openSettings('updates') });
       } else {
         show(null);
-        const v = $('update-current').textContent;
-        if (!quiet) $('update-status').innerHTML = `You're up to date — DeviceDeck <b>${v}</b> is the latest version.`;
+        $('update-status').innerHTML = `You're up to date — DeviceDeck <b>${current || '?'}</b> is the latest version.`;
       }
     } catch (err) {
       if (!quiet) $('update-status').textContent = `Couldn't check for updates: ${err?.message || err}. Check your internet connection and try again.`;
@@ -98,10 +104,6 @@ export function initUpdater({ openDialog, toast }) {
     }
   }
 
-  $('btn-update').addEventListener('click', () => {
-    openDialog('#dlg-update');
-    if (!pending) runCheck({ quiet: false });
-  });
   $('update-check').addEventListener('click', () => runCheck({ quiet: false }));
   $('update-install').addEventListener('click', install);
 
@@ -114,4 +116,13 @@ export function initUpdater({ openDialog, toast }) {
   };
   setTimeout(autoCheck, 15000);
   setInterval(autoCheck, 60 * 60 * 1000);
+
+  return {
+    // Opening the Updates section checks again, unless this window checked in the last minute.
+    onShow() {
+      if (pending || busy) return;
+      if (Date.now() - lastChecked < 60000) return;
+      runCheck({ quiet: false });
+    },
+  };
 }

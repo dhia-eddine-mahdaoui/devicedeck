@@ -6,12 +6,13 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, EventTarget, Manager, Webview};
 
 pub const MCP_PORT: u16 = 12721;
+static MCP_LISTENING: AtomicBool = AtomicBool::new(false);
 
 /// The port can be moved (e.g. to run a second copy) with the DEVICEDECK_MCP_PORT environment variable.
 fn mcp_port() -> u16 {
@@ -123,6 +124,83 @@ fn safe_name(s: &str) -> String {
     if t.is_empty() { "screenshot".into() } else { t }
 }
 
+/// Where screenshots go: Pictures/DeviceDeck (or the home folder if there is no Pictures folder).
+fn shots_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
+    let base = app
+        .path()
+        .picture_dir()
+        .or_else(|_| app.path().home_dir())
+        .map_err(|e| e.to_string())?;
+    Ok(base.join("DeviceDeck"))
+}
+
+/// Facts for the Settings page: version, system, MCP server and screenshot folder.
+#[tauri::command]
+pub fn app_info(app: AppHandle) -> Value {
+    let port = mcp_port();
+    json!({
+        "version": env!("CARGO_PKG_VERSION"),
+        "os": std::env::consts::OS,
+        "arch": std::env::consts::ARCH,
+        "mcpRunning": MCP_LISTENING.load(Ordering::Relaxed),
+        "mcpUrl": format!("http://127.0.0.1:{port}/mcp"),
+        "screenshotsDir": shots_dir(&app).map(|d| d.to_string_lossy().to_string()).unwrap_or_default(),
+    })
+}
+
+/// Create the screenshot folder if needed and show it.
+#[tauri::command]
+pub fn open_shots_dir(app: AppHandle) -> Result<(), String> {
+    let dir = shots_dir(&app)?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    open_path(dir.to_string_lossy().to_string(), None)
+}
+
+/// Delete cookies, cache and site storage of the device previews (signs out of every site).
+/// The webviews share one browser profile, so this also clears the interface's own storage;
+/// the interface saves its settings again right after.
+#[tauri::command]
+pub fn clear_browsing_data(app: AppHandle) -> Result<(), String> {
+    let views = app.webviews();
+    let mut done = false;
+    for (label, wv) in views.iter() {
+        if label.starts_with("pane-") || !done {
+            wv.clear_all_browsing_data().map_err(|e| e.to_string())?;
+            done = true;
+        }
+    }
+    Ok(())
+}
+
+/// Open a web page in the default browser. Only plain https links (no spaces or quotes).
+#[tauri::command]
+pub fn open_url(url: String) -> Result<(), String> {
+    let ok = url.starts_with("https://") && url.len() < 4096 && !url.chars().any(|c| c.is_whitespace() || c.is_control() || c == '"');
+    if !ok {
+        return Err("Only https links can be opened.".into());
+    }
+    #[cfg(windows)]
+    let mut cmd = {
+        // rundll32 hands the link to the default browser without going through a shell.
+        let mut c = std::process::Command::new("rundll32");
+        c.args(["url.dll,FileProtocolHandler", &url]);
+        c
+    };
+    #[cfg(target_os = "macos")]
+    let mut cmd = {
+        let mut c = std::process::Command::new("open");
+        c.arg(&url);
+        c
+    };
+    #[cfg(not(any(windows, target_os = "macos")))]
+    let mut cmd = {
+        let mut c = std::process::Command::new("xdg-open");
+        c.arg(&url);
+        c
+    };
+    cmd.spawn().map(|_| ()).map_err(|e| e.to_string())
+}
+
 /// Save a PNG (base64) into Pictures\DeviceDeck; returns the file path.
 #[tauri::command]
 pub fn save_screenshot(app: AppHandle, name: String, data: String) -> Result<String, String> {
@@ -130,12 +208,7 @@ pub fn save_screenshot(app: AppHandle, name: String, data: String) -> Result<Str
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(data.trim())
         .map_err(|e| e.to_string())?;
-    let base = app
-        .path()
-        .picture_dir()
-        .or_else(|_| app.path().home_dir())
-        .map_err(|e| e.to_string())?;
-    let dir = base.join("DeviceDeck");
+    let dir = shots_dir(&app)?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let mut path = dir.join(format!("{}.png", safe_name(&name)));
     let mut n = 2;
@@ -540,7 +613,10 @@ pub fn start_mcp_server(app: AppHandle) {
     std::thread::spawn(move || {
         let port = mcp_port();
         let listener = match TcpListener::bind(("127.0.0.1", port)) {
-            Ok(l) => l,
+            Ok(l) => {
+                MCP_LISTENING.store(true, Ordering::Relaxed);
+                l
+            }
             Err(e) => {
                 // Usually another DeviceDeck is already open and owns the port.
                 eprintln!("DeviceDeck: MCP server not started, port {port} unavailable: {e}");

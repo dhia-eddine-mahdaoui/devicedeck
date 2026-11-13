@@ -91,9 +91,9 @@
           </div>
           <button class="btn ghost" id="btn-scheme" title="Preview pages in light or dark mode"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg><span id="scheme-label">Auto</span></button>
           <button class="btn ghost desktop-only" id="btn-shot-all" title="Screenshot every device (whole page) into Pictures › DeviceDeck"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Screenshot</span></button>
-          <button class="btn ghost desktop-only update-btn" id="btn-update" title="Check for updates"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span>Updates</span><i class="update-dot" hidden></i></button>
           <button class="btn ghost desktop-only" id="btn-ai" title="Connect coding assistants through the MCP server"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/></svg><span>MCP</span></button>
           <button class="btn ghost" id="btn-frames" title="Show or hide device frames"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2.5"/></svg><span>Frames</span></button>
+          <button class="icon-btn update-btn" id="btn-settings" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><i class="update-dot" hidden></i></button>
           <button class="btn accent" id="btn-add"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Add device</span></button>
         </div>
       </div>
@@ -162,29 +162,131 @@
       </form>
     </dialog>
 
-    <!-- Updates dialog -->
-    <dialog id="dlg-update" class="dialog">
+    <!-- Settings dialog -->
+    <dialog id="dlg-settings" class="dialog wide settings">
       <form method="dialog" class="dlg-body">
         <div class="dlg-head">
-          <h2>Updates</h2>
+          <h2>Settings</h2>
           <button class="icon-btn" value="cancel" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
-        <p class="update-status" id="update-status">You have DeviceDeck <b id="update-current">—</b>.</p>
-        <div class="update-new" id="update-new" hidden>
-          <h3 class="steps-title">What's new in <span id="update-version"></span></h3>
-          <div class="update-notes" id="update-notes"></div>
-        </div>
-        <div class="update-progress" id="update-progress" hidden><i id="update-bar"></i></div>
-        <label class="update-auto">Check automatically
-          <select id="update-every">
-            <option value="1">every day</option>
-            <option value="7">every week</option>
-            <option value="0">never</option>
-          </select>
-        </label>
-        <div class="dlg-actions">
-          <button type="button" class="btn ghost" id="update-check">Check now</button>
-          <button type="button" class="btn primary" id="update-install" hidden>Install &amp; restart</button>
+        <div class="set-layout">
+          <nav class="set-nav" id="set-nav" aria-label="Settings sections">
+            <button type="button" data-sec="general" class="on">General</button>
+            <button type="button" data-sec="updates" class="desktop-only">Updates<i class="update-dot" hidden></i></button>
+            <button type="button" data-sec="data">Privacy &amp; data</button>
+            <button type="button" data-sec="keys">Shortcuts</button>
+            <button type="button" data-sec="about">About</button>
+          </nav>
+          <div class="set-panes">
+            <section data-sec="general">
+              <div class="set-row">
+                <div><b>New tabs open</b><span>The page a new tab starts on.</span></div>
+                <div class="set-ctl">
+                  <select id="set-home-kind" aria-label="New tabs open">
+                    <option value="test">Built-in test page</option>
+                    <option value="url">A website…</option>
+                  </select>
+                </div>
+              </div>
+              <div class="set-row" id="set-home-row" hidden>
+                <div><b>Website address</b><span>For example localhost:3000 or your staging site.</span></div>
+                <div class="set-ctl"><input id="set-home-url" type="text" spellcheck="false" placeholder="localhost:3000" aria-label="New tab address" /></div>
+              </div>
+              <div class="set-row desktop-only">
+                <div><b>Page loading</b><span>All devices share your internet address. Loading them one after another avoids "Too many requests" blocks.</span></div>
+                <div class="set-ctl">
+                  <select id="set-pace" aria-label="Page loading">
+                    <option value="gentle">One after another</option>
+                    <option value="2">2 s apart</option>
+                    <option value="5">5 s apart</option>
+                    <option value="off">All at once</option>
+                  </select>
+                </div>
+              </div>
+              <div class="set-row desktop-only">
+                <div><b>Screenshots</b><span class="mono" id="set-shots-dir">Pictures › DeviceDeck</span></div>
+                <div class="set-ctl"><button type="button" class="btn" id="set-shots-open">Open folder</button></div>
+              </div>
+              <div class="set-row desktop-only">
+                <div><b>MCP server</b><span id="set-mcp-status">Checking…</span></div>
+                <div class="set-ctl">
+                  <button type="button" class="btn ghost" id="set-mcp-copy">Copy address</button>
+                  <button type="button" class="btn" id="set-mcp-setup">Set up</button>
+                </div>
+              </div>
+            </section>
+
+            <section data-sec="updates" class="desktop-only" hidden>
+              <p class="update-status" id="update-status">Checking for updates…</p>
+              <div class="update-new" id="update-new" hidden>
+                <h3 class="steps-title">What's new in <span id="update-version"></span></h3>
+                <div class="update-notes" id="update-notes"></div>
+              </div>
+              <div class="update-progress" id="update-progress" hidden><i id="update-bar"></i></div>
+              <div class="set-btns">
+                <button type="button" class="btn" id="update-check">Check now</button>
+                <button type="button" class="btn primary" id="update-install" hidden>Install &amp; restart</button>
+              </div>
+              <div class="set-row">
+                <div><b>Check automatically</b><span>Updates are signed and verified before they install.</span></div>
+                <div class="set-ctl">
+                  <select id="update-every" aria-label="Check automatically">
+                    <option value="1">Every day</option>
+                    <option value="7">Every week</option>
+                    <option value="0">Never</option>
+                  </select>
+                </div>
+              </div>
+              <div class="set-row">
+                <div><b>All releases</b><span>Past versions and what changed in each.</span></div>
+                <div class="set-ctl"><a class="btn ghost" data-ext href="https://github.com/dhia-eddine-mahdaoui/devicedeck/releases">Open</a></div>
+              </div>
+            </section>
+
+            <section data-sec="data" hidden>
+              <div class="set-row desktop-only">
+                <div><b>Clear cookies and cache</b><span>Signs you out of every site in the devices and forgets their saved data. Handy to test a first visit.</span></div>
+                <div class="set-ctl"><button type="button" class="btn" id="set-clear">Clear</button></div>
+              </div>
+              <div class="set-row">
+                <div><b>Reset DeviceDeck</b><span>Closes all tabs and brings back the default devices, layout and settings.</span></div>
+                <div class="set-ctl"><button type="button" class="btn danger" id="set-reset">Reset</button></div>
+              </div>
+              <p class="muted small">DeviceDeck has no account and collects nothing about you. The only thing it fetches by itself is the update check from GitHub.</p>
+            </section>
+
+            <section data-sec="keys" hidden>
+              <dl class="set-keys">
+                <dt>New tab</dt><dd><kbd>Ctrl</kbd> <kbd>T</kbd></dd>
+                <dt>Close tab</dt><dd><kbd>Ctrl</kbd> <kbd>W</kbd></dd>
+                <dt>Next / previous tab</dt><dd><kbd>Ctrl</kbd> <kbd>Tab</kbd> · <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Tab</kbd></dd>
+                <dt>Go to the address bar</dt><dd><kbd>Ctrl</kbd> <kbd>L</kbd></dd>
+                <dt>Reload all devices</dt><dd><kbd>Ctrl</kbd> <kbd>R</kbd> · <kbd>F5</kbd></dd>
+                <dt>Zoom in / out</dt><dd><kbd>Ctrl</kbd> <kbd>+</kbd> · <kbd>Ctrl</kbd> <kbd>-</kbd></dd>
+                <dt>Back / forward</dt><dd><kbd>Alt</kbd> <kbd>←</kbd> · <kbd>Alt</kbd> <kbd>→</kbd></dd>
+                <dt>Leave Focus layout, close menus</dt><dd><kbd>Esc</kbd></dd>
+              </dl>
+              <p class="muted small mac-only">On a Mac, use <kbd>⌘</kbd> instead of <kbd>Ctrl</kbd>.</p>
+            </section>
+
+            <section data-sec="about" hidden>
+              <div class="set-about">
+                <span class="logo big" aria-hidden="true"><i></i><i></i></span>
+                <div>
+                  <b>DeviceDeck <span id="set-version"></span></b>
+                  <span>Test websites on many phones, tablets and computers side by side.</span>
+                  <span class="small" id="set-system"></span>
+                </div>
+              </div>
+              <div class="set-links">
+                <a class="btn ghost" data-ext href="https://github.com/dhia-eddine-mahdaoui/devicedeck">Source code</a>
+                <a class="btn ghost" data-ext id="set-report" href="https://github.com/dhia-eddine-mahdaoui/devicedeck/issues/new">Report a problem</a>
+                <a class="btn ghost" data-ext href="https://github.com/dhia-eddine-mahdaoui/devicedeck/blob/main/LICENSE">License</a>
+                <button type="button" class="btn ghost" id="set-copy-info">Copy system info</button>
+              </div>
+              <p class="muted small">Copyright © 2026 Dhia Mahdaoui. Free and open source under the GNU AGPL-3.0. To use it in a closed-source or commercial product, ask about a commercial license on GitHub.</p>
+            </section>
+          </div>
         </div>
       </form>
     </dialog>

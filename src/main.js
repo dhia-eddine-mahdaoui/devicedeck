@@ -1,6 +1,7 @@
 import './style.css';
 import helperSource from './helper.js?raw';
-import { initUpdater } from './updater.js';
+import { initSettings } from './settings.js';
+import { relaunch } from '@tauri-apps/plugin-process';
 import {
   DEVICES, GROUPS, OS_LABEL, BROWSERS_BY_OS, BROWSER_LABEL, DEFAULT_BROWSER, PRESETS, OS_VERSIONS,
   findDevice, resolvePane, osVersionLabel, screenShape,
@@ -132,6 +133,7 @@ function defaultState() {
     zoom: 'fit',
     sync: { scroll: true, nav: true, interact: true },
     pace: 'gentle',
+    home: '',               // address new tabs open ('' = built-in test page)
     scheme: 'auto',
     frames: false,
     history: [DEMO_URL],
@@ -188,8 +190,10 @@ if (urlParam) {
 }
 
 let saveTimer;
+let resetting = false;   // Settings > Reset: nothing may be written back on the way out
 function save() {
   clearTimeout(saveTimer);
+  if (resetting) return;
   saveTimer = setTimeout(() => {
     Object.assign(activeTab(), pickTab(state));
     renderTabs();
@@ -1925,10 +1929,15 @@ function clonePane(p) {
   return { ...p, id: newId(), box: p.box ? { ...p.box } : undefined };
 }
 
+// Settings > New tabs open: the built-in test page, or an address of the user's choice.
+function homeUrl() {
+  return state.home ? normalizeUrl(state.home) : DEMO_URL;
+}
+
 function newTab(url) {
   Object.assign(activeTab(), pickTab(state));
   const panes = state.panes.map(clonePane);
-  const target = url || DEMO_URL;
+  const target = url || homeUrl();
   const tab = { id: newId(), source: { kind: 'url', url: target }, panes, preset: state.preset, history: [target], histIdx: 0, focusId: null, title: '' };
   state.tabs.push(tab);
   switchTab(tab.id);
@@ -1947,7 +1956,8 @@ function closeTab(id) {
   if (state.tabs.length === 1) {
     // Closing the last tab leaves a fresh one.
     state.tabs = [];
-    const tab = { id: newId(), source: { kind: 'url', url: DEMO_URL }, panes: state.panes.map(clonePane), preset: state.preset, history: [DEMO_URL], histIdx: 0, focusId: null, title: '' };
+    const home = homeUrl();
+    const tab = { id: newId(), source: { kind: 'url', url: home }, panes: state.panes.map(clonePane), preset: state.preset, history: [home], histIdx: 0, focusId: null, title: '' };
     state.tabs.push(tab);
     state.activeTab = tab.id;
     Object.assign(state, pickTab(tab));
@@ -2046,9 +2056,13 @@ function updateSync() {
   $('#btn-sync').classList.toggle('on', n > 0);
   $('#pace-select').value = state.pace || 'gentle';
 }
-$('#pace-select').addEventListener('change', (e) => {
-  state.pace = e.target.value;
+function setPace(value) {
+  state.pace = value;
+  $('#pace-select').value = value;
   save();
+}
+$('#pace-select').addEventListener('change', (e) => {
+  setPace(e.target.value);
   toast(state.pace === 'off' ? 'Devices load pages all at once' : state.pace === 'gentle' ? 'Devices load pages one after another' : `Devices start loading ${state.pace} s apart`, 1800);
 });
 $('#btn-sync').addEventListener('click', async (e) => {
@@ -2087,7 +2101,28 @@ $('#btn-scheme').addEventListener('click', () => {
 // In Focus layout only the device on screen is photographed.
 $('#btn-shot-all').addEventListener('click', () => screenshotPanes(activePanes(), true));
 $('#btn-ai').addEventListener('click', () => openDialog('#dlg-ai'));
-initUpdater({ openDialog, toast });
+initSettings({
+  openDialog,
+  toast,
+  copyText,
+  getHome: () => state.home || '',
+  setHome: (v) => { state.home = v; save(); },
+  getPace: () => state.pace || 'gentle',
+  setPace,
+  reloadAll: () => reloadAll(true),
+  openMcpSetup: () => openDialog('#dlg-ai'),
+  // Back to a first start: forget tabs, devices, layout and settings, then restart.
+  resetAll: () => {
+    resetting = true;
+    clearTimeout(saveTimer);
+    try {
+      localStorage.removeItem(STORE_KEY);
+      for (const k of Object.keys(localStorage)) if (k.startsWith('dd.')) localStorage.removeItem(k);
+    } catch { /* ignore */ }
+    if (DESKTOP) relaunch().catch(() => location.reload());
+    else location.reload();
+  },
+});
 $('#btn-frames').addEventListener('click', () => {
   state.frames = !state.frames;
   $('#btn-frames').classList.toggle('on', state.frames);

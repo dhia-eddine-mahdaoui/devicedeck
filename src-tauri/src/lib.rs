@@ -328,6 +328,10 @@ pub fn run() {
             extra::pane_raise,
             extra::save_screenshot,
             extra::open_path,
+            extra::app_info,
+            extra::open_shots_dir,
+            extra::open_url,
+            extra::clear_browsing_data,
             extra::mcp_reply
         ])
         .setup(|app| {
