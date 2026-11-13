@@ -1,0 +1,49 @@
+DeviceDeck Source-Available License
+
+Copyright (c) 2026 Dhia Mahdaoui. All rights reserved.
+
+This license applies to DeviceDeck, including its source code, installers,
+documentation, images and videos (the "Software").
+
+1. Private use is free.
+   You may download, install, run, study and modify the Software for your own
+   private use: personal use, or internal use within your own company or
+   organization, for example to test websites you build. No permission or
+   payment is needed for that.
+
+2. Public use needs permission.
+   You may NOT, without prior written permission from the copyright holder:
+   a. publish, redistribute or share the Software or any modified version of it
+      (including forks, mirrors, packages and installers), except as allowed in
+      section 3;
+   b. offer the Software, or a product or service built on it, to the public,
+      whether free or paid (for example as a hosted service, an app in a store,
+      or part of another product);
+   c. sell, sublicense or rent the Software;
+   d. present the Software or its look as your own work, or remove this notice.
+   To ask for permission, contact the copyright holder through
+   https://github.com/dhia-eddine-mahdaoui (for example by opening an issue on
+   the DeviceDeck repository).
+
+3. Contributions are welcome.
+   You may fork the repository on GitHub only to propose changes back to it
+   through issues and pull requests. By submitting a contribution (code,
+   documentation, images or anything else), you confirm that you have the right
+   to do so, and you grant the copyright holder a perpetual, worldwide,
+   royalty-free, irrevocable license to use, modify, relicense and distribute
+   your contribution as part of the Software.
+
+4. Keep this notice.
+   Any copy or modified version you are allowed to keep must include this
+   license and the copyright notice above.
+
+5. No warranty.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+   IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Third-party components (such as Tauri and other dependencies) keep their own
+licenses.

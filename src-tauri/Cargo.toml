@@ -3,6 +3,8 @@ name = "devicedeck"
 version = "1.0.0"
 description = "See and test websites as any phone, tablet or computer"
 edition = "2021"
+authors = ["Dhia Mahdaoui"]
+license-file = "../LICENSE"
 publish = false
 
 [lib]

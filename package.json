@@ -2,6 +2,8 @@
   "name": "devicedeck",
   "private": true,
   "version": "1.0.0",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Dhia Mahdaoui",
   "type": "module",
   "engines": {
     "node": ">=20"

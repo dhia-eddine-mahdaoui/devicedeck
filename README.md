@@ -90,3 +90,11 @@ npm run desktop   # installers land in src-tauri/target/release/bundle
 ## Security
 
 The MCP server listens only on `127.0.0.1` and refuses requests from web pages and DNS-rebinding attempts. DeviceDeck has no telemetry and needs no API keys. Please report security issues through GitHub's private vulnerability reporting (Security tab).
+
+## Contributing
+
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+© 2026 Dhia Mahdaoui. DeviceDeck is **free for private use** (personal, or internal within your company). Publishing, redistributing or offering it to the public needs permission — [open an issue](../../issues) to ask. See [LICENSE](LICENSE) for the full terms.
