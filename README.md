@@ -2,6 +2,12 @@
 
 See and test any website as an iPhone, Android phone, iPad, Android tablet, Windows PC, Mac, Chromebook or Linux computer — side by side, at the same time.
 
+<p align="center">
+  <a href="docs/DeviceDeck-demo.mp4"><img src="docs/demo.gif" alt="DeviceDeck showing one website on an iPhone, Android phone, iPad and Windows laptop at once" width="800"></a>
+  <br>
+  <a href="docs/DeviceDeck-demo.mp4">▶ Watch the full demo video (2:35)</a>
+</p>
+
 Each device preview is a real browser view that tells websites it **is** that device: browser name (user agent), system, screen size, pixel density, touch screen, pointer and hover. Works on every website — no add-ons, no setup.
 
 ## Install (Windows 10 / 11)
