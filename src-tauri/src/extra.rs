@@ -147,15 +147,34 @@ pub fn save_screenshot(app: AppHandle, name: String, data: String) -> Result<Str
     Ok(path.to_string_lossy().to_string())
 }
 
-/// Show a file or folder in Explorer.
+/// Show a file or folder in Explorer / Finder / the Linux file manager.
 #[tauri::command]
 pub fn open_path(path: String, select: Option<bool>) -> Result<(), String> {
-    let mut cmd = std::process::Command::new("explorer");
-    if select.unwrap_or(false) {
-        cmd.arg(format!("/select,{path}"));
-    } else {
-        cmd.arg(path);
-    }
+    let select = select.unwrap_or(false);
+    #[cfg(windows)]
+    let mut cmd = {
+        let mut c = std::process::Command::new("explorer");
+        c.arg(if select { format!("/select,{path}") } else { path });
+        c
+    };
+    #[cfg(target_os = "macos")]
+    let mut cmd = {
+        let mut c = std::process::Command::new("open");
+        if select {
+            c.arg("-R");
+        }
+        c.arg(path);
+        c
+    };
+    #[cfg(not(any(windows, target_os = "macos")))]
+    let mut cmd = {
+        // xdg-open cannot highlight a file, so open its folder instead.
+        let p = std::path::PathBuf::from(&path);
+        let target = if select { p.parent().map(|d| d.to_path_buf()).unwrap_or(p) } else { p };
+        let mut c = std::process::Command::new("xdg-open");
+        c.arg(target);
+        c
+    };
     cmd.spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
@@ -409,6 +428,28 @@ reload and check_layout use every device, while read_page and run_script use the
     id.map(|id| json!({ "jsonrpc": "2.0", "id": id, "result": result }))
 }
 
+/// `localhost`, `127.0.0.1` or `[::1]`, with or without a port — nothing else (not `localhost.evil.com`).
+fn is_loopback_host(host: &str) -> bool {
+    let name = if let Some(rest) = host.strip_prefix('[') {
+        match rest.split_once(']') {
+            Some((h, tail)) if tail.is_empty() || tail.strip_prefix(':').is_some_and(|p| p.parse::<u16>().is_ok()) => return h == "::1",
+            _ => return false,
+        }
+    } else {
+        match host.split_once(':') {
+            Some((h, p)) if p.parse::<u16>().is_ok() => h,
+            Some(_) => return false,
+            None => host,
+        }
+    };
+    name == "localhost" || name == "127.0.0.1"
+}
+
+/// `http://` + a loopback host. `null` (sandboxed frames, file pages) is refused.
+fn is_loopback_origin(origin: &str) -> bool {
+    origin.strip_prefix("http://").is_some_and(is_loopback_host)
+}
+
 fn respond(stream: &mut TcpStream, status: &str, body: &str) {
     let msg = format!(
         "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
@@ -429,6 +470,7 @@ fn serve(app: AppHandle, mut stream: TcpStream) {
     }
     let mut len = 0usize;
     let mut origin_ok = true;
+    let mut host_ok = false;
     loop {
         let mut line = String::new();
         if reader.read_line(&mut line).unwrap_or(0) == 0 {
@@ -444,14 +486,18 @@ fn serve(app: AppHandle, mut stream: TcpStream) {
         }
         if let Some(v) = lower.strip_prefix("origin:") {
             // Only local tools may talk to it (blocks web pages from driving the app).
-            let v = v.trim();
-            origin_ok = v.starts_with("http://localhost") || v.starts_with("http://127.0.0.1") || v == "null";
+            // Browsers always send Origin on cross-site POSTs; command-line clients send none.
+            origin_ok = is_loopback_origin(v.trim());
+        }
+        if let Some(v) = lower.strip_prefix("host:") {
+            // Blocks DNS rebinding: a page on evil.example resolving to 127.0.0.1 still says Host: evil.example.
+            host_ok = is_loopback_host(v.trim());
         }
     }
     let mut parts = first.split_whitespace();
     let method = parts.next().unwrap_or("");
     let path = parts.next().unwrap_or("");
-    if !origin_ok {
+    if !origin_ok || !host_ok {
         return respond(&mut stream, "403 Forbidden", "{}");
     }
     if method == "GET" && (path == "/health" || path == "/status") {

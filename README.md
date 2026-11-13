@@ -10,11 +10,26 @@ See and test any website as an iPhone, Android phone, iPad, Android tablet, Wind
 
 Each device preview is a real browser view that tells websites it **is** that device: browser name (user agent), system, screen size, pixel density, touch screen, pointer and hover. Works on every website — no add-ons, no setup.
 
-## Install (Windows 10 / 11)
+## Install
 
-1. Open **Releases** on the right of this page.
-2. Download `DeviceDeck_x.y.z_x64-setup.exe` (recommended) or the `.msi`.
-3. Run it. DeviceDeck appears in the Start menu.
+Open **[Releases](../../releases/latest)** and download the file for your computer:
+
+| System | File | Then |
+| --- | --- | --- |
+| Windows 10 / 11 | `DeviceDeck_x.y.z_x64-setup.exe` (or `.msi`) | Run it. DeviceDeck appears in the Start menu. |
+| macOS, Apple Silicon (M1 and newer) | `DeviceDeck_x.y.z_aarch64.dmg` | Open it and drag DeviceDeck into Applications. |
+| macOS, Intel | `DeviceDeck_x.y.z_x64.dmg` | Same as above. |
+| Linux: Debian, Ubuntu, Mint | `.deb` | `sudo apt install ./DeviceDeck_x.y.z_amd64.deb` |
+| Linux: Fedora, openSUSE | `.rpm` | `sudo dnf install ./DeviceDeck-x.y.z-1.x86_64.rpm` |
+| Linux: any other | `.AppImage` | `chmod +x DeviceDeck_*.AppImage` and run it. |
+
+The installers are not code-signed yet, so the first launch shows a warning:
+
+- **Windows:** SmartScreen "Windows protected your PC" → **More info** → **Run anyway**.
+- **macOS:** if it says DeviceDeck "is damaged" or "cannot be opened", run once in Terminal:
+  `xattr -cr /Applications/DeviceDeck.app`
+
+DeviceDeck is a desktop app: it runs on Windows, macOS and Linux computers (it shows phones and tablets; it does not install on them). The full set of faking powers (request headers, client hints, DevTools-protocol emulation, device-shaped screens, screenshots) is **Windows-only** for now; on macOS and Linux each device gets its size, user agent and in-page faking.
 
 ## What it does
 
@@ -86,7 +101,7 @@ npm ci               # exact dependency versions from package-lock.json
 npm run desktop      # builds the .exe and .msi into src-tauri/target/release/bundle
 ```
 
-On macOS / Linux, use your own bundle format, for example `npm run tauri build -- --bundles app` (macOS) or `--bundles deb,appimage` (Linux), because `tauri.conf.json` lists the Windows installers.
+The same command works on macOS (`.app` + `.dmg`) and Linux (`.deb`, `.rpm`, `.AppImage`); installers land in `src-tauri/target/release/bundle`.
 
 `npm run build` builds only the interface into `dist/` (also usable as a plain website, with fewer faking powers).
 
@@ -99,8 +114,13 @@ On macOS / Linux, use your own bundle format, for example `npm run tauri build -
 | `extension/` | Optional Chrome extension ("DeviceDeck Connector") for the plain-website version |
 | `public/` | Static files (demo page) |
 | `src-tauri/` | Desktop app (Rust + Tauri 2): windows, device panes, MCP server |
-| `.github/workflows/release.yml` | Builds and publishes Windows installers |
+| `.github/workflows/release.yml` | Builds and publishes installers for Windows, macOS and Linux |
+| `.github/workflows/ci.yml` | Checks every push and pull request compiles on all three |
 
 No secrets or API keys are needed to build or run DeviceDeck.
 
-New releases: GitHub → Actions → "Windows release" → Run workflow, enter a version like `v1.0.1`.
+New releases: GitHub → Actions → "Release" → Run workflow, enter a version like `v1.0.1`.
+
+## Security
+
+The MCP server listens only on `127.0.0.1` and refuses requests coming from web pages (any `Origin` other than `http://localhost` / `http://127.0.0.1`) or addressed to any other host name (DNS rebinding). Anything running on your own computer can still reach it while DeviceDeck is open, as with any local developer tool. Report security problems through GitHub's private vulnerability reporting (Security tab → "Report a vulnerability").

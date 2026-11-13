@@ -16,7 +16,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": "all",
     "publisher": "DeviceDeck",
     "shortDescription": "Test websites as any phone, tablet or computer",
     "longDescription": "DeviceDeck shows a website side by side on iPhones, Android phones, tablets, Windows and Mac computers, and makes the site believe it is really opened on each of them.",
@@ -27,6 +27,10 @@
       "icons/128x128@2x.png",
       "icons/icon.ico"
     ],
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "10.15"
+    },
     "windows": {
       "webviewInstallMode": { "type": "embedBootstrapper" },
       "nsis": {

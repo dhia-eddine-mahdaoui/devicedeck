@@ -1,7 +1,8 @@
-name: Windows release
+name: Release
 
 # Run it from the "Actions" tab (Run workflow) with a version like v1.0.1:
-# it builds the .exe and .msi installers and publishes them as a release.
+# it builds installers for Windows, macOS (Apple Silicon + Intel) and Linux
+# and publishes them together as one GitHub release.
 on:
   workflow_dispatch:
     inputs:
@@ -13,24 +14,64 @@ permissions:
   contents: write
 
 jobs:
-  windows:
-    runs-on: windows-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ""
+          - platform: macos-latest # Apple Silicon (M1 and newer)
+            args: "--target aarch64-apple-darwin"
+            rust_target: aarch64-apple-darwin
+          - platform: macos-latest # Intel Macs
+            args: "--target x86_64-apple-darwin"
+            rust_target: x86_64-apple-darwin
+          - platform: ubuntu-22.04 # .deb, .rpm and .AppImage
+            args: ""
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Linux build dependencies
+        if: startsWith(matrix.platform, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+
       - uses: dtolnay/rust-toolchain@1.91.0
+        with:
+          targets: ${{ matrix.rust_target }}
+
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          key: ${{ matrix.rust_target }}
+
       - run: npm ci
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.event.inputs.version }}
           releaseName: DeviceDeck ${{ github.event.inputs.version }}
-          releaseBody: "Download **DeviceDeck_x64-setup.exe** (recommended) or the **.msi**, run it, done."
+          releaseBody: |
+            | System | Download |
+            | --- | --- |
+            | Windows 10 / 11 | `DeviceDeck_*_x64-setup.exe` (recommended) or `.msi` |
+            | macOS, Apple Silicon (M1+) | `DeviceDeck_*_aarch64.dmg` |
+            | macOS, Intel | `DeviceDeck_*_x64.dmg` |
+            | Linux (Debian / Ubuntu) | `.deb` |
+            | Linux (Fedora / openSUSE) | `.rpm` |
+            | Linux (any) | `.AppImage` |
+
+            The app is not code-signed yet. Windows: SmartScreen → "More info" → "Run anyway".
+            macOS: if it says the app "is damaged", run `xattr -cr /Applications/DeviceDeck.app` once.
           releaseDraft: false
+          args: ${{ matrix.args }}
