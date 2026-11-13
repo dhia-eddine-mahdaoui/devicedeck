@@ -1,7 +1,7 @@
 {
   "name": "devicedeck",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "AGPL-3.0-only",
   "author": "Dhia Mahdaoui",
   "type": "module",
