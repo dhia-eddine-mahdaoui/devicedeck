@@ -71,7 +71,7 @@ jobs:
             | Linux (Fedora / openSUSE) | `.rpm` |
             | Linux (any) | `.AppImage` |
 
-            The app is not code-signed yet. Windows: SmartScreen → "More info" → "Run anyway".
-            macOS: if it says the app "is damaged", run `xattr -cr /Applications/DeviceDeck.app` once.
+            Free code signing for the Windows installers by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org) (application in progress; see the [code signing policy](https://github.com/${{ github.repository }}/blob/main/CODE_SIGNING.md)).
+            Until then: Windows SmartScreen → "More info" → "Run anyway". macOS: if it says the app "is damaged", run `xattr -cr /Applications/DeviceDeck.app` once.
           releaseDraft: false
           args: ${{ matrix.args }}
