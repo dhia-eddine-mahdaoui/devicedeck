@@ -1,6 +1,6 @@
 /* =====================================================================
    DeviceDeck — interface styles
-   One neutral dark theme, one accent color, consistent control sizes.
+   A neutral dark theme and a light one, one accent color, consistent control sizes.
    ===================================================================== */
 :root {
   /* surfaces, darkest to lightest */
@@ -14,6 +14,9 @@
 
   --line: #2b2d31;
   --line-2: #3a3c41;
+  --line-3: #46494f;        /* hovered borders */
+  --hover-tint: rgba(255, 255, 255, .03);
+  --grid-dot: rgba(255, 255, 255, .07);
 
   --text: #dcdee2;
   --text-2: #a3a7ae;
@@ -35,7 +38,44 @@
   --font: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
   --mono: 'Cascadia Mono', 'Cascadia Code', ui-monospace, 'SF Mono', Consolas, monospace;
   --shadow: 0 8px 24px rgba(0, 0, 0, .4);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, .55);
+  --backdrop: rgba(0, 0, 0, .55);
   color-scheme: dark;
+}
+/* Settings › Theme › Light. Device frames stay dark, like the real hardware. */
+:root[data-theme="light"] {
+  --bg-0: #e9ebee;
+  --bg-1: #f4f5f7;
+  --bg-2: #ffffff;
+  --surface: #f4f5f7;
+  --surface-2: #e8eaed;
+  --surface-3: #dadde2;
+  --field: #ffffff;
+
+  --line: #dfe1e5;
+  --line-2: #cbced4;
+  --line-3: #b2b6bd;
+  --hover-tint: rgba(0, 0, 0, .035);
+  --grid-dot: rgba(0, 0, 0, .12);
+
+  --text: #1f2329;
+  --text-2: #4f5661;
+  --text-3: #7d838d;
+
+  --accent: #2f6fe8;
+  --accent-hover: #2462d8;
+  --accent-text: #1f5fd6;
+  --accent-bg: rgba(47, 111, 232, .12);
+  --focus: rgba(47, 111, 232, .5);
+
+  --ok: #2f8f3a;
+  --warn: #a8700c;
+  --danger: #d03b33;
+
+  --shadow: 0 6px 20px rgba(20, 24, 31, .14);
+  --shadow-lg: 0 20px 50px rgba(20, 24, 31, .22);
+  --backdrop: rgba(20, 24, 31, .35);
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -65,7 +105,7 @@ kbd {
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--surface-3); border: 2px solid transparent; background-clip: padding-box; border-radius: 6px; }
-::-webkit-scrollbar-thumb:hover { background-color: #4a4d53; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--line-3); }
 ::-webkit-scrollbar-corner { background: transparent; }
 
 #app { display: grid; grid-template-rows: auto auto auto 1fr auto; height: 100vh; }
@@ -95,7 +135,7 @@ kbd {
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   cursor: default; flex: 0 1 auto;
 }
-.tab:hover { background: rgba(255, 255, 255, .03); color: var(--text); }
+.tab:hover { background: var(--hover-tint); color: var(--text); }
 .tab.on { background: var(--bg-2); color: var(--text); border-color: var(--line); margin-bottom: -1px; height: 31px; }
 .tab + .tab:not(.on)::before {
   content: ''; position: absolute; left: -1px; top: 9px; bottom: 9px; width: 1px; background: var(--line-2);
@@ -242,7 +282,7 @@ kbd {
   height: var(--h); padding: 0 3px 0 4px;
   background: var(--field); border: 1px solid var(--line-2); border-radius: var(--radius);
 }
-.address:hover { border-color: #46494f; }
+.address:hover { border-color: var(--line-3); }
 .address:focus-within { border-color: var(--accent); }
 .address-mode {
   font-size: 10px; font-weight: 600; letter-spacing: .04em; line-height: 16px;
@@ -284,7 +324,7 @@ kbd {
   text-decoration: none;
 }
 .btn svg { width: 15px; height: 15px; color: var(--text-2); }
-.btn:hover { background: var(--surface-2); border-color: #46494f; }
+.btn:hover { background: var(--surface-2); border-color: var(--line-3); }
 .btn:active { background: var(--surface-3); }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--text-2); }
 .btn.ghost:hover { background: var(--surface-2); color: var(--text); }
@@ -338,7 +378,7 @@ kbd {
   border: 1px solid var(--line-2); border-radius: var(--radius); color: var(--text-3);
   background: var(--field);
 }
-.select-wrap:hover { border-color: #46494f; }
+.select-wrap:hover { border-color: var(--line-3); }
 .select-wrap svg { width: 14px; height: 14px; }
 .select-wrap select { height: 100%; background: transparent; border: 0; outline: 0; cursor: pointer; color: var(--text); font-size: 12.5px; }
 select option, select optgroup { background: var(--surface); color: var(--text); }
@@ -594,10 +634,10 @@ select option, select optgroup { background: var(--surface); color: var(--text);
   width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px);
   padding: 0; border: 1px solid var(--line-2); border-radius: var(--radius-lg);
   background: var(--bg-2); color: var(--text);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+  box-shadow: var(--shadow-lg);
 }
 .dialog.wide { width: min(760px, calc(100vw - 32px)); }
-.dialog::backdrop { background: rgba(0, 0, 0, .55); }
+.dialog::backdrop { background: var(--backdrop); }
 .dialog[open] { animation: dlg-in .12s ease-out; }
 @keyframes dlg-in { from { opacity: 0; transform: translateY(4px); } }
 .dlg-body { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 12px; }
@@ -666,7 +706,9 @@ select option, select optgroup { background: var(--surface); color: var(--text);
 }
 .code-row code::-webkit-scrollbar { height: 0; }
 .dialog a { color: var(--accent-text); }
-.dialog a.btn { color: #fff; }
+.dialog a.btn.primary { color: #fff; }
+.dialog a.btn.ghost { color: var(--text-2); text-decoration: none; }
+.dialog a.btn.ghost:hover { color: var(--text); }
 .note {
   margin: 0; padding: 8px 12px; border-radius: var(--radius);
   background: var(--surface); border: 1px solid var(--line-2); border-left: 3px solid var(--warn);
@@ -717,8 +759,16 @@ html:not(.desktop) .desktop-only { display: none !important; }
 html.desktop .web-only { display: none !important; }
 
 /* ---------- free layout: panels placed and sized by hand ---------- */
-.panes.layout-free { position: relative; display: block; width: 100%; height: 100%; min-height: 0; padding: 0; overflow: hidden; }
-.panes.layout-free .pane { position: absolute; left: 0; top: 0; animation: none; box-shadow: var(--shadow); }
+.panes.layout-free {
+  position: relative; display: block; width: 100%; height: 100%; min-height: 0; padding: 0; overflow: hidden;
+  cursor: grab; touch-action: none;
+  background-image: radial-gradient(circle, var(--grid-dot) 1.2px, transparent 1.4px);
+  background-size: 24px 24px;
+}
+.panes.layout-free .pane { position: absolute; left: 0; top: 0; animation: none; box-shadow: var(--shadow); transform-origin: 0 0; cursor: default; }
+body.panning, body.panning * { cursor: grabbing !important; user-select: none; }
+body.pan-ready .panes.layout-free, body.pan-ready .panes.layout-free * { cursor: grab !important; }
+body.panning iframe, body.pan-ready iframe { pointer-events: none; }
 .panes.layout-free .pane-head { cursor: grab; }
 .panes.layout-free .pane-head select, .panes.layout-free .pane-head button { cursor: pointer; }
 body.moving, body.moving * { cursor: grabbing !important; user-select: none; }

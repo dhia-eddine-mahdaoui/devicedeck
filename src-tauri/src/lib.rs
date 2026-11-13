@@ -35,6 +35,16 @@ struct LayoutItem {
     zoom: f64,
     visible: bool,
     shape: Option<Shape>,
+    /// The part of the view that is inside the stage, in view pixels (`None`: all of it).
+    clip: Option<Clip>,
+}
+
+#[derive(Deserialize, Clone, Copy, PartialEq)]
+struct Clip {
+    x: f64,
+    y: f64,
+    w: f64,
+    h: f64,
 }
 
 /// The real screen outline in interface pixels: rounded corners and the camera cutout.
@@ -61,26 +71,34 @@ enum CutKind {
 }
 
 /// Cut a view to the device's screen outline, so the frame's rounded corners and the camera
-/// cutout drawn by the interface underneath show through (`None`: a plain rectangle).
+/// cutout drawn by the interface underneath show through (`None`: a plain rectangle), and to the
+/// part of it that is on screen when the Free layout canvas has moved it past the stage's edge.
 #[cfg(windows)]
-fn set_shape(wv: &Webview, w: f64, h: f64, shape: Option<Shape>) {
+fn set_shape(wv: &Webview, w: f64, h: f64, shape: Option<Shape>, clip: Option<Clip>) {
     let scale = wv.window().scale_factor().unwrap_or(1.0);
     let _ = wv.with_webview(move |platform| unsafe {
         use windows::Win32::Graphics::Gdi::{
-            CombineRgn, CreateEllipticRgn, CreateRoundRectRgn, DeleteObject, SetWindowRgn, HRGN, RGN_DIFF,
+            CombineRgn, CreateEllipticRgn, CreateRectRgn, CreateRoundRectRgn, DeleteObject, SetWindowRgn, HRGN,
+            RGN_AND, RGN_DIFF,
         };
         let mut hwnd = windows::Win32::Foundation::HWND::default();
         if platform.controller().ParentWindow(&mut hwnd).is_err() || hwnd.is_invalid() {
             return;
         }
-        let Some(shape) = shape else {
+        if shape.is_none() && clip.is_none() {
             SetWindowRgn(hwnd, None, true);
             return;
-        };
+        }
         let px = |v: f64| (v * scale).round() as i32;
         let (pw, ph) = (px(w), px(h));
+        let shape = shape.unwrap_or(Shape { r: 0.0, cut: None });
         let d = px(shape.r * 2.0).max(0);
-        let rgn: HRGN = CreateRoundRectRgn(0, 0, pw + 1, ph + 1, d, d);
+        let rgn: HRGN = if d > 0 { CreateRoundRectRgn(0, 0, pw + 1, ph + 1, d, d) } else { CreateRectRgn(0, 0, pw, ph) };
+        if let Some(c) = clip {
+            let keep = CreateRectRgn(px(c.x), px(c.y), px(c.x + c.w), px(c.y + c.h));
+            CombineRgn(Some(rgn), Some(rgn), Some(keep), RGN_AND);
+            let _ = DeleteObject(keep.into());
+        }
         if let Some(c) = shape.cut {
             let (x1, y1, x2, y2) = (px(c.x), px(c.y), px(c.x + c.w) + 1, px(c.y + c.h) + 1);
             let hole = match c.round {
@@ -99,7 +117,7 @@ fn set_shape(wv: &Webview, w: f64, h: f64, shape: Option<Shape>) {
 }
 
 #[cfg(not(windows))]
-fn set_shape(_wv: &Webview, _w: f64, _h: f64, _shape: Option<Shape>) {}
+fn set_shape(_wv: &Webview, _w: f64, _h: f64, _shape: Option<Shape>, _clip: Option<Clip>) {}
 
 fn parse_url(url: &str) -> Result<Url, String> {
     url.parse::<Url>().map_err(|e| format!("Not a valid address: {e}"))
@@ -230,7 +248,7 @@ fn pane_layout(app: AppHandle, items: Vec<LayoutItem>) {
         if let Some(wv) = app.get_webview(&it.label) {
             if it.visible {
                 place(&wv, it.x, it.y, it.w, it.h, it.zoom);
-                set_shape(&wv, it.w, it.h, it.shape);
+                set_shape(&wv, it.w, it.h, it.shape, it.clip);
             } else {
                 // Native views always sit on top, so park them off-screen while menus are open.
                 let _ = wv.set_position(LogicalPosition::new(-30000.0, -30000.0));

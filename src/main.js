@@ -131,6 +131,7 @@ function defaultState() {
     prevLayout: 'row',
     focusId: null,
     zoom: 'fit',
+    canvas: { x: 0, y: 0, z: 1 }, // Free layout: where the canvas is moved to and its zoom
     sync: { scroll: true, nav: true, interact: true },
     pace: 'gentle',
     home: '',               // address new tabs open ('' = built-in test page)
@@ -447,6 +448,13 @@ function coveredInFree(p, screenRect) {
   });
 }
 
+// Windows can cut a device view to any outline; other systems only show it whole.
+const CAN_CLIP = /Windows/.test(navigator.userAgent);
+function scaleShape(shape, k) {
+  if (!shape || k === 1) return shape || null;
+  return { r: shape.r * k, cut: shape.cut && { ...shape.cut, x: shape.cut.x * k, y: shape.cut.y * k, w: shape.cut.w * k, h: shape.cut.h * k } };
+}
+
 let overlayWasOpen = false;
 function nativeLayoutLoop() {
   const overlay = overlayOpen();
@@ -463,7 +471,15 @@ function nativeLayoutLoop() {
     if (!entry?.label) continue;
     const r = entry.el.querySelector('.screen').getBoundingClientRect();
 
-    const under = free && !entry.el.hidden && coveredInFree(p, r);
+    // The part of the screen inside the stage. Windows cuts the view to it; elsewhere a view
+    // that sticks out past the edge shows its picture until it's back inside.
+    const ix1 = Math.max(r.left, stage.left); const iy1 = Math.max(r.top, stage.top);
+    const ix2 = Math.min(r.right, stage.right); const iy2 = Math.min(r.bottom, stage.bottom);
+    const partial = free && (ix1 > r.left + 0.5 || iy1 > r.top + 0.5 || ix2 < r.right - 0.5 || iy2 < r.bottom - 0.5);
+    const clip = partial && CAN_CLIP && ix2 > ix1 && iy2 > iy1
+      ? { x: Math.round(ix1 - r.left), y: Math.round(iy1 - r.top), w: Math.round(ix2 - ix1), h: Math.round(iy2 - iy1) }
+      : null;
+    const under = free && !entry.el.hidden && (coveredInFree(p, r) || (partial && !CAN_CLIP));
     if (under && !entry.covered && !entry.covering) {
       // Take its picture first, then park it, so it never flashes blank.
       entry.covering = true;
@@ -480,13 +496,15 @@ function nativeLayoutLoop() {
     }
 
     const hidden = entry.el.hidden || overlay || entry.covered || r.width < 2
-      || r.right < stage.left + 1 || r.left > stage.right - 1;
+      || ix2 - ix1 < 1 || iy2 - iy1 < 1;
     const item = {
       label: entry.label,
       x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height),
-      zoom: entry.scale || 1, visible: !hidden,
+      zoom: viewZoom(entry), visible: !hidden,
       // The view is cut to the screen's real outline, so the frame's corners and camera show.
-      shape: entry.shape || null,
+      shape: scaleShape(entry.shape, free ? canvas().z : 1),
+      // ...and to the part of the canvas that is on screen (Free layout can push it past the edge).
+      clip,
     };
     const key = JSON.stringify(item);
     if (key !== entry.lastLayout) {
@@ -691,7 +709,7 @@ function shotName(p) {
 // PNG (base64) of one device: the whole page or just what's visible.
 async function capturePane(p, entry, { full = true, maxWidth = 0 } = {}) {
   const r = resolvePane(p);
-  const eff = (window.devicePixelRatio || 1) * (entry.scale || 1);
+  const eff = (window.devicePixelRatio || 1) * viewZoom(entry);
   let width = r.vw;
   let height = r.vh;
   let x = 0;
@@ -1380,31 +1398,121 @@ function setupResize(p, el) {
   });
 }
 
-/* ------------------------------------------------------------------ Free layout: move and resize panels */
+/* ------------------------------------------------------------------ Free layout: an endless canvas */
+// Panels sit on a canvas that can be moved in any direction and zoomed. A panel's box is in canvas
+// units; the canvas offset (x, y) and zoom (z) turn that into a place on screen.
 let zTop = 1;
-function stageSize() {
-  const s = $('#stage');
-  return { w: s.clientWidth, h: s.clientHeight };
+const CZ_MIN = 0.1;
+const CZ_MAX = 3;
+function canvas() {
+  const c = state.canvas;
+  if (!c || !Number.isFinite(c.x) || !Number.isFinite(c.y) || !(c.z > 0)) state.canvas = { x: 0, y: 0, z: 1 };
+  return state.canvas;
 }
-
-// Keep a panel fully inside the stage: device views are real windows and can't be cut off.
-function clampBox(p, entry) {
-  if (!p.box) return;
-  const { w, h } = stageSize();
-  const rect = entry.el.getBoundingClientRect();
-  p.box.x = Math.round(Math.max(0, Math.min(p.box.x, w - rect.width)));
-  p.box.y = Math.round(Math.max(0, Math.min(p.box.y, h - rect.height)));
-}
+const freeZoom = () => (state.layout === 'free' ? canvas().z : 1);
+// What a device view is really zoomed to on screen.
+const viewZoom = (entry) => (entry.scale || 1) * freeZoom();
 
 function applyBox(p, entry) {
   const el = entry.el;
   if (state.layout !== 'free' || !p.box) {
-    el.style.left = el.style.top = el.style.zIndex = '';
+    el.style.left = el.style.top = el.style.zIndex = el.style.transform = '';
     return;
   }
-  el.style.left = `${p.box.x}px`;
-  el.style.top = `${p.box.y}px`;
+  const c = canvas();
+  el.style.left = `${Math.round(p.box.x * c.z + c.x)}px`;
+  el.style.top = `${Math.round(p.box.y * c.z + c.y)}px`;
+  el.style.transform = c.z === 1 ? '' : `scale(${c.z})`;
   el.style.zIndex = String(p.box.z || 1);
+}
+
+let canvasSaveTimer;
+function applyCanvas() {
+  const host = $('#panes');
+  if (state.layout !== 'free') {
+    host.style.backgroundSize = host.style.backgroundPosition = '';
+    return;
+  }
+  const c = canvas();
+  for (const p of state.panes) { const en = entries.get(p.id); if (en) applyBox(p, en); }
+  // The dot grid moves and zooms with the canvas (spaced wider when far out, so it never gets dense).
+  let step = 24 * c.z;
+  while (step < 12) step *= 4;
+  host.style.backgroundSize = `${step}px ${step}px`;
+  host.style.backgroundPosition = `${c.x}px ${c.y}px`;
+  syncZoomSelect();
+  clearTimeout(canvasSaveTimer);
+  canvasSaveTimer = setTimeout(save, 300);
+}
+
+// Zoom keeping the canvas point under (px, py) (relative to the canvas) where it is.
+function zoomAt(z, px, py) {
+  const c = canvas();
+  const nz = Math.max(CZ_MIN, Math.min(CZ_MAX, z));
+  if (nz === c.z) return;
+  c.x = px - ((px - c.x) / c.z) * nz;
+  c.y = py - ((py - c.y) / c.z) * nz;
+  c.z = Math.round(nz * 1000) / 1000;
+  applyCanvas();
+}
+function zoomCenter(z) {
+  const host = $('#panes');
+  zoomAt(z, host.clientWidth / 2, host.clientHeight / 2);
+}
+function stepCanvasZoom(dir) {
+  zoomCenter(canvas().z * (dir > 0 ? 1.25 : 0.8));
+  toast(`Canvas ${Math.round(canvas().z * 100)}%`, 900);
+}
+
+// Zoom and move so every device is in view.
+function fitAll() {
+  const host = $('#panes').getBoundingClientRect();
+  const c = canvas();
+  let x1 = Infinity; let y1 = Infinity; let x2 = -Infinity; let y2 = -Infinity;
+  for (const p of state.panes) {
+    const en = entries.get(p.id);
+    if (!en || en.el.hidden || !p.box) continue;
+    const r = en.el.getBoundingClientRect();
+    const x = (r.left - host.left - c.x) / c.z;
+    const y = (r.top - host.top - c.y) / c.z;
+    x1 = Math.min(x1, x); y1 = Math.min(y1, y);
+    x2 = Math.max(x2, x + r.width / c.z); y2 = Math.max(y2, y + r.height / c.z);
+  }
+  if (!Number.isFinite(x1)) return;
+  const pad = 32;
+  const z = Math.max(CZ_MIN, Math.min(1, (host.width - pad * 2) / (x2 - x1), (host.height - pad * 2) / (y2 - y1)));
+  c.z = Math.round(z * 1000) / 1000;
+  c.x = Math.round((host.width - (x2 - x1) * c.z) / 2 - x1 * c.z);
+  c.y = Math.round((host.height - (y2 - y1) * c.z) / 2 - y1 * c.z);
+  applyCanvas();
+}
+
+// The toolbar's zoom menu zooms the canvas in Free layout.
+const ZOOM_PANES = [['fit', 'Fit height'], ['0.25', '25%'], ['0.33', '33%'], ['0.5', '50%'], ['0.67', '67%'], ['0.75', '75%'], ['1', '100%']];
+const ZOOM_CANVAS = [['fit', 'Show all'], ['0.25', '25%'], ['0.5', '50%'], ['0.75', '75%'], ['1', '100%'], ['1.5', '150%'], ['2', '200%']];
+let zoomMenuKind = 'panes';
+function syncZoomSelect() {
+  const sel = $('#zoom');
+  const free = state.layout === 'free';
+  const kind = free ? 'canvas' : 'panes';
+  if (kind !== zoomMenuKind || !sel.options.length) {
+    zoomMenuKind = kind;
+    sel.innerHTML = (free ? ZOOM_CANVAS : ZOOM_PANES).map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+  }
+  sel.title = free ? 'Canvas zoom (Ctrl + scroll)' : 'Device size';
+  if (!free) { sel.value = state.zoom; return; }
+  const z = canvas().z;
+  const match = ZOOM_CANVAS.find(([v]) => v !== 'fit' && Math.abs(parseFloat(v) - z) < 0.005);
+  let cur = sel.querySelector('option[data-cur]');
+  if (match) { cur?.remove(); sel.value = match[0]; return; }
+  if (!cur) {
+    cur = document.createElement('option');
+    cur.dataset.cur = '1';
+    sel.appendChild(cur);
+  }
+  cur.value = String(z);
+  cur.textContent = `${Math.round(z * 100)}%`;
+  sel.value = cur.value;
 }
 
 function raiseNative(entry) {
@@ -1422,25 +1530,28 @@ function restackNative() {
   state.panes.slice().sort((a, b) => (a.box?.z || 0) - (b.box?.z || 0)).forEach((p) => raiseNative(entries.get(p.id)));
 }
 
-// Switching to Free keeps every panel where it is now; ones that were scrolled away are cascaded.
+// Switching to Free keeps every panel where it is now, at the size it is now; hidden ones are cascaded.
 function initFreeBoxes() {
-  const stage = $('#stage').getBoundingClientRect();
+  const host = $('#stage').getBoundingClientRect();
+  const c = canvas();
   let cascade = 0;
   for (const p of state.panes) {
     const entry = entries.get(p.id);
     if (p.box || !entry) continue;
     const r = entry.el.getBoundingClientRect();
-    const visible = !entry.el.hidden && r.width > 0 && r.left >= stage.left && r.right <= stage.right + 1;
-    const s = entry.scale || 0.5;
-    p.box = visible
-      ? { x: r.left - stage.left, y: r.top - stage.top, s, z: ++zTop }
-      : { x: 24 + cascade * 36, y: 24 + cascade * 36, s, z: ++zTop };
-    if (!visible) cascade++;
+    const shown = !entry.el.hidden && r.width > 0;
+    const s = (entry.scale || 0.5) / c.z;
+    p.box = shown
+      ? { x: (r.left - host.left - c.x) / c.z, y: (r.top - host.top - c.y) / c.z, s, z: ++zTop }
+      : { x: (24 - c.x) / c.z + cascade * 36, y: (24 - c.y) / c.z + cascade * 36, s, z: ++zTop };
+    if (!shown) cascade++;
   }
 }
+// New panels appear in the part of the canvas that is on screen.
 function newBoxFor() {
+  const c = canvas();
   const n = state.panes.filter((x) => x.box).length;
-  return { x: 24 + (n % 8) * 36, y: 24 + (n % 8) * 36, s: 0.4, z: ++zTop };
+  return { x: (24 - c.x) / c.z + (n % 8) * 36, y: (24 - c.y) / c.z + (n % 8) * 36, s: 0.4, z: ++zTop };
 }
 
 function setupFreeMove(p, el) {
@@ -1457,9 +1568,9 @@ function setupFreeMove(p, el) {
     const by = p.box.y;
     document.body.classList.add('moving');
     const move = (ev) => {
-      p.box.x = bx + ev.clientX - sx;
-      p.box.y = by + ev.clientY - sy;
-      clampBox(p, entry);
+      const z = canvas().z;
+      p.box.x = Math.round(bx + (ev.clientX - sx) / z);
+      p.box.y = Math.round(by + (ev.clientY - sy) / z);
       applyBox(p, entry);
     };
     const up = () => {
@@ -1488,17 +1599,14 @@ function setupFreeMove(p, el) {
     const sx = e.clientX;
     const sy = e.clientY;
     const startW = r.vw * p.box.s;
-    const rect = entry.el.getBoundingClientRect();
-    const chromeH = rect.height - r.vh * p.box.s; // title strips above and below the screen
     document.body.classList.add('scaling');
     const move = (ev) => {
       // Follow whichever way the pointer went further, keeping the device's proportions.
-      const dx = ev.clientX - sx;
-      const dy = (ev.clientY - sy) * (r.vw / r.vh);
+      const z = canvas().z;
+      const dx = (ev.clientX - sx) / z;
+      const dy = ((ev.clientY - sy) / z) * (r.vw / r.vh);
       const want = (startW + (Math.abs(dx) > Math.abs(dy) ? dx : dy)) / r.vw;
-      const { w, h } = stageSize();
-      const maxS = Math.min((w - p.box.x - 2) / r.vw, (h - p.box.y - chromeH) / r.vh, 2);
-      p.box.s = Math.round(Math.max(0.1, Math.min(want, maxS)) * 1000) / 1000;
+      p.box.s = Math.round(Math.max(0.1, Math.min(want, 2)) * 1000) / 1000;
       sizePane(p, entry);
     };
     const up = () => {
@@ -1514,6 +1622,75 @@ function setupFreeMove(p, el) {
     grip.addEventListener('pointercancel', up);
   });
 }
+
+// Moving around the canvas: drag the empty background (or hold Space, or use the middle button,
+// anywhere), scroll to move, Ctrl + scroll or pinch to zoom, double-click the background to show all.
+let spaceHeld = false;
+function setupCanvas() {
+  // Every tab has its own panel container inside the stage, so listen on the stage.
+  const host = $('#stage');
+  host.addEventListener('pointerdown', (e) => {
+    if (state.layout !== 'free' || !e.target.closest('#panes')) return;
+    const onBackground = !e.target.closest('.pane');
+    if (!(e.button === 1 || (e.button === 0 && (onBackground || spaceHeld)))) return;
+    e.preventDefault();
+    e.stopPropagation();
+    host.setPointerCapture(e.pointerId);
+    const c = canvas();
+    const sx = e.clientX - c.x;
+    const sy = e.clientY - c.y;
+    document.body.classList.add('panning');
+    const move = (ev) => {
+      c.x = Math.round(ev.clientX - sx);
+      c.y = Math.round(ev.clientY - sy);
+      applyCanvas();
+    };
+    const up = () => {
+      host.removeEventListener('pointermove', move);
+      host.removeEventListener('pointerup', up);
+      host.removeEventListener('pointercancel', up);
+      document.body.classList.remove('panning');
+    };
+    host.addEventListener('pointermove', move);
+    host.addEventListener('pointerup', up);
+    host.addEventListener('pointercancel', up);
+  }, true);
+  // The middle button would otherwise start the browser's autoscroll.
+  host.addEventListener('auxclick', (e) => { if (state.layout === 'free' && e.button === 1) e.preventDefault(); });
+  host.addEventListener('dblclick', (e) => {
+    if (state.layout === 'free' && !e.target.closest('.pane')) fitAll();
+  });
+  host.addEventListener('wheel', (e) => {
+    if (state.layout !== 'free') return;
+    e.preventDefault();
+    const line = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? host.clientHeight : 1;
+    if (e.ctrlKey || e.metaKey) {
+      const r = $('#panes').getBoundingClientRect();
+      // Trackpad pinches arrive as small Ctrl + scroll steps, mouse wheels as big ones.
+      const d = Math.max(-60, Math.min(60, e.deltaY * line));
+      zoomAt(canvas().z * Math.exp(-d * 0.006), e.clientX - r.left, e.clientY - r.top);
+      return;
+    }
+    let dx = e.deltaX * line;
+    let dy = e.deltaY * line;
+    if (e.shiftKey && !dx) { dx = dy; dy = 0; }
+    const c = canvas();
+    c.x = Math.round(c.x - dx);
+    c.y = Math.round(c.y - dy);
+    applyCanvas();
+  }, { passive: false });
+
+  const typing = (t) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+  document.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space' || state.layout !== 'free' || typing(e.target) || document.querySelector('dialog[open]')) return;
+    e.preventDefault();
+    if (!spaceHeld) { spaceHeld = true; document.body.classList.add('pan-ready'); }
+  });
+  const release = () => { spaceHeld = false; document.body.classList.remove('pan-ready'); };
+  document.addEventListener('keyup', (e) => { if (e.code === 'Space') release(); });
+  window.addEventListener('blur', release);
+}
+setupCanvas();
 
 function frameKey(p) {
   const r = resolvePane(p);
@@ -1553,7 +1730,7 @@ function loadFrame(p, entry) {
       ua: r.profile.ua,
       init: nativeInit(nativeProfile),
       headers: headerRules(profile),
-      bounds: { x: rect.left, y: rect.top, w: Math.max(1, rect.width), h: Math.max(1, rect.height), zoom: entry.scale || 1 },
+      bounds: { x: rect.left, y: rect.top, w: Math.max(1, rect.width), h: Math.max(1, rect.height), zoom: viewZoom(entry) },
       defer: true,
     }).then(() => { entry.lastLayout = null; }))) // the layout loop now places it where the panel is
       .then(() => { if (!stale()) return applyEmulation(label, profile); })
@@ -1712,7 +1889,7 @@ function sizePane(p, entry) {
   entry.shape = shape.r || shape.cut ? { r: shape.r * s, cut: shape.cut && { ...shape.cut, x: shape.cut.x * s, y: shape.cut.y * s, w: shape.cut.w * s, h: shape.cut.h * s } } : null;
   entry.el.style.setProperty('--pane-w', `${Math.max(Math.round(r.vw * s) + (state.frames ? 48 : 2), 300)}px`);
   entry.el.querySelector('.zoom-tag')?.remove();
-  if (!entry.el.hidden && state.layout !== 'focus' && entry.el.isConnected) {
+  if (!entry.el.hidden && state.layout !== 'focus' && state.layout !== 'free' && entry.el.isConnected) {
     const extra = Math.round(entry.el.getBoundingClientRect().height - Math.round(r.vh * s));
     const k = state.frames ? 'framed' : 'plain';
     if (extra > 20 && extra < 400 && extra !== measuredChrome[k]) {
@@ -1801,7 +1978,7 @@ function renderPanes() {
     applyBox(p, entry);
   });
   if (state.layout === 'free') {
-    for (const p of state.panes) { const en = entries.get(p.id); if (en) { clampBox(p, en); applyBox(p, en); } }
+    applyCanvas();
   }
   renderFocusStrip();
   renderPresets();
@@ -1848,7 +2025,7 @@ function resizeAll() {
     const entry = entries.get(p.id);
     if (!entry) continue;
     sizePane(p, entry);
-    if (state.layout === 'free') { clampBox(p, entry); applyBox(p, entry); }
+    if (state.layout === 'free') applyBox(p, entry);
   }
 }
 
@@ -2013,7 +2190,9 @@ $('#presets').addEventListener('click', (e) => {
 
 function updateLayoutSeg() {
   document.querySelectorAll('#layout-seg button').forEach((b) => b.classList.toggle('on', b.dataset.layout === state.layout));
-  $('#zoom').disabled = state.layout === 'focus' || state.layout === 'free';
+  $('#zoom').disabled = state.layout === 'focus';
+  syncZoomSelect();
+  applyCanvas();
   $('#btn-shot-all').title = isFocus()
     ? 'Screenshot the focused device (whole page) into Pictures › DeviceDeck'
     : 'Screenshot every device (whole page) into Pictures › DeviceDeck';
@@ -2032,6 +2211,11 @@ $('#layout-seg').addEventListener('click', (e) => {
 });
 
 $('#zoom').addEventListener('change', (e) => {
+  if (state.layout === 'free') {
+    if (e.target.value === 'fit') fitAll(); else zoomCenter(parseFloat(e.target.value));
+    syncZoomSelect();
+    return;
+  }
   state.zoom = e.target.value;
   resizeAll();
   save();
@@ -2403,7 +2587,7 @@ function updateStatus() {
   let html = `<b>${total}</b> device${total === 1 ? '' : 's'} · faking active in <b>${faked}</b> · sync: ${syncs.length ? syncs.join(', ') : 'off'}`;
   const fp = isFocus() && state.panes.find((p) => p.id === state.focusId);
   if (fp && total > 1) html += ` · <b>Focus: ${escapeHtml(paneLabel(fp))}</b> — the other ${total - 1} paused`;
-  if (state.layout === 'free') html += ' · Free layout: drag a panel by its title, resize from its corner';
+  if (state.layout === 'free') html += ' · Free layout: drag the background or scroll to move around, Ctrl + scroll to zoom, double-click the background to show all';
   $('#status-left').innerHTML = html;
 }
 
@@ -2430,10 +2614,15 @@ document.addEventListener('keydown', (e) => {
     toast('Reloaded all devices', 1200);
   } else if (mod && (e.key === '=' || e.key === '+')) {
     e.preventDefault();
-    if (state.layout !== 'focus') stepZoom(1);
+    if (state.layout === 'free') stepCanvasZoom(1);
+    else if (state.layout !== 'focus') stepZoom(1);
   } else if (mod && e.key === '-') {
     e.preventDefault();
-    if (state.layout !== 'focus') stepZoom(-1);
+    if (state.layout === 'free') stepCanvasZoom(-1);
+    else if (state.layout !== 'focus') stepZoom(-1);
+  } else if (mod && e.key === '0' && state.layout === 'free') {
+    e.preventDefault();
+    fitAll();
   } else if (e.altKey && e.key === 'ArrowLeft') {
     $('#btn-back').click();
   } else if (e.altKey && e.key === 'ArrowRight') {

@@ -2,6 +2,7 @@
 // keyboard shortcuts and information about DeviceDeck.
 import { version as WEB_VERSION } from '../package.json';
 import { initUpdater } from './updater.js';
+import { getTheme, setTheme } from './theme.js';
 
 const REPO = 'https://github.com/dhia-eddine-mahdaoui/devicedeck';
 const DESKTOP = !!window.__TAURI_INTERNALS__;
@@ -59,12 +60,14 @@ export function initSettings(ctx) {
 
   /* ---- General */
   function fill() {
+    $('set-theme').value = getTheme();
     const home = ctx.getHome();
     $('set-home-kind').value = home ? 'url' : 'test';
     $('set-home-url').value = home;
     $('set-home-row').hidden = !home;
     $('set-pace').value = ctx.getPace();
   }
+  $('set-theme').addEventListener('change', (e) => setTheme(e.target.value));
   $('set-home-kind').addEventListener('change', (e) => {
     const url = e.target.value === 'url';
     $('set-home-row').hidden = !url;
