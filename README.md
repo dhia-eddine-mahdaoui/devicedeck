@@ -1,6 +1,14 @@
-# DeviceDeck
+<h1 align="center">DeviceDeck</h1>
 
-See and test any website as an iPhone, Android phone, iPad, Android tablet, Windows PC, Mac, Chromebook or Linux computer — side by side, at the same time.
+<p align="center">
+  See and test any website as an iPhone, Android phone, iPad, Android tablet, Windows PC, Mac, Chromebook or Linux computer — side by side, at the same time.
+</p>
+
+<p align="center">
+  <a href="../../releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/dhia-eddine-mahdaoui/devicedeck?style=flat-square&color=2f81f7"></a>
+  <a href="../../actions/workflows/ci.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/dhia-eddine-mahdaoui/devicedeck/ci.yml?branch=main&style=flat-square&label=build"></a>
+  <img alt="Windows | macOS | Linux" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-8957e5?style=flat-square">
+</p>
 
 <p align="center">
   <a href="docs/DeviceDeck-demo.mp4"><img src="docs/demo.gif" alt="DeviceDeck showing one website on an iPhone, Android phone, iPad and Windows laptop at once" width="800"></a>
@@ -12,115 +20,73 @@ Each device preview is a real browser view that tells websites it **is** that de
 
 ## Install
 
-Open **[Releases](../../releases/latest)** and download the file for your computer:
+Download the file for your computer from **[Releases](../../releases/latest)**:
 
-| System | File | Then |
-| --- | --- | --- |
-| Windows 10 / 11 | `DeviceDeck_x.y.z_x64-setup.exe` (or `.msi`) | Run it. DeviceDeck appears in the Start menu. |
-| macOS, Apple Silicon (M1 and newer) | `DeviceDeck_x.y.z_aarch64.dmg` | Open it and drag DeviceDeck into Applications. |
-| macOS, Intel | `DeviceDeck_x.y.z_x64.dmg` | Same as above. |
-| Linux: Debian, Ubuntu, Mint | `.deb` | `sudo apt install ./DeviceDeck_x.y.z_amd64.deb` |
-| Linux: Fedora, openSUSE | `.rpm` | `sudo dnf install ./DeviceDeck-x.y.z-1.x86_64.rpm` |
-| Linux: any other | `.AppImage` | `chmod +x DeviceDeck_*.AppImage` and run it. |
+| System | File |
+| --- | --- |
+| Windows 10 / 11 | `DeviceDeck_x.y.z_x64-setup.exe` (or `.msi`) |
+| macOS, Apple Silicon | `DeviceDeck_x.y.z_aarch64.dmg` |
+| macOS, Intel | `DeviceDeck_x.y.z_x64.dmg` |
+| Linux | `.deb`, `.rpm` or `.AppImage` |
 
-The installers are not code-signed yet, so the first launch shows a warning:
+> [!NOTE]
+> The installers are not code-signed yet. **Windows:** on the SmartScreen warning, click **More info** → **Run anyway**. **macOS:** if it says the app "is damaged", run `xattr -cr /Applications/DeviceDeck.app` once.
 
-- **Windows:** SmartScreen "Windows protected your PC" → **More info** → **Run anyway**.
-- **macOS:** if it says DeviceDeck "is damaged" or "cannot be opened", run once in Terminal:
-  `xattr -cr /Applications/DeviceDeck.app`
+The full set of faking powers (request headers, client hints, device-shaped screens, screenshots) is Windows-only for now; on macOS and Linux each device gets its size, user agent and in-page faking.
 
-DeviceDeck is a desktop app: it runs on Windows, macOS and Linux computers (it shows phones and tablets; it does not install on them). The full set of faking powers (request headers, client hints, DevTools-protocol emulation, device-shaped screens, screenshots) is **Windows-only** for now; on macOS and Linux each device gets its size, user agent and in-page faking.
+## Features
 
-## What it does
+- **Many devices side by side** — 24 built-in phones, tablets, laptops and desktops, or any custom size. Rotate, resize, and switch between Row, Grid, Focus and Free layouts.
+- **Real device identity** — pick the browser (Safari, Chrome, Firefox, Edge, Samsung Internet) and system version (iOS 16–27, Android 12–17, macOS 13–27, Windows 10–11) per device.
+- **True screen shapes** — rounded corners and the Dynamic Island or punch-hole camera, at their real size and place.
+- **Everything in sync** — scrolling, clicks and typing are mirrored on every device.
+- **Developer tools** — DevTools for any device, light / dark mode, full-page screenshots of every device in one click.
+- **Rate-limit friendly** — devices load one after another and retry by themselves on HTTP 429.
 
-- Many devices side by side, with device frames, rotation and custom sizes (drag the edge of a screen).
-- Layouts: Row, Grid (web), Focus (one device; the others pause until you leave Focus) and Free (drag panels anywhere by their title strip, resize them from the corner).
-- Pick the browser per device: Safari, Chrome, Firefox, Edge, Samsung Internet.
-- Pick the system version per device (iOS / iPadOS 16–27, Android 12–17, macOS 13–27, Windows 10–11); the latest is the default. The version shows up exactly where the real device reveals it: Safari's version, the Android version in Firefox and Samsung Internet, and Chromium client hints. (Like real browsers, the user agent alone stays frozen at "Mac OS X 10_15_7", "Windows NT 10.0", "Android 10; K" and, since iOS 26, "OS 18_6".)
-- Device frames show each phone's and tablet's real screen shape: its rounded corners and front camera (Dynamic Island or punch hole) at the real size and place, also when rotated. The page is really cut there, so you see what the cutout hides.
-- iPads report themselves as iPadOS (Safari's mobile-website mode), not as a Mac.
-- Rate-limit friendly: all devices share your internet address, so by default they load pages one after another (Sync › Page loading: one after another, 2 s apart, 5 s apart or all at once), and later devices reuse the site's files from the shared cache. A device that gets "Too many requests" (HTTP 429) retries by itself after 4, 8 and 16 s.
-- Scrolling, link clicks, button presses and typing stay in sync across all devices. Each device asks the site itself, so pages that send every device somewhere else (e.g. `/download` → `/download/mac` or `/download/android`) behave exactly like on the real devices; only links you click are shared.
-- Light / dark mode per device or for all.
-- Ready-made sets: phones, tablets, iOS vs Android, laptops & desktops, common breakpoints.
-- Open a local HTML file or paste HTML.
-- Open any device in its own window at its exact size.
-- Browser tabs (`Ctrl+T`, `Ctrl+W`, `Ctrl+Tab`), each with its own address and devices.
-- Real device emulation by the browser engine: touch input and touch-style CSS, device client hints, light/dark mode.
-- Inspect: browser developer tools for any device. On touch devices, inspecting pauses touch input so the mouse can select elements; click Inspect again to bring touch back.
-- One-click full-page screenshots of every device, or only the focused one in Focus layout (saved to Pictures › DeviceDeck).
-- AI assistants (Claude Code, Cursor…) can drive DeviceDeck through its built-in MCP server at `http://127.0.0.1:12721/mcp`:
-  `claude mcp add --transport http devicedeck http://127.0.0.1:12721/mcp`
+## Use it with AI assistants
 
-### MCP server
+DeviceDeck has a built-in [MCP](https://modelcontextprotocol.io) server, so assistants like Claude Code or Cursor can open sites on any device, check layouts and take screenshots:
 
-The server is part of the app: it only exists **while DeviceDeck is open**. `curl http://127.0.0.1:12721/health` tells you whether it is running; the `get_status` tool tells an assistant whether the window is responding.
+```bash
+claude mcp add --transport http devicedeck http://127.0.0.1:12721/mcp
+```
+
+<details>
+<summary>Available tools</summary>
+
+The server only runs while DeviceDeck is open (`curl http://127.0.0.1:12721/health`).
 
 | Tool | What it does |
 | --- | --- |
-| `get_status` | Is DeviceDeck running and responding; layout, focused device, loading count. |
-| `get_app_state` | Address, tabs, layout and every device (pane id, size, browser, the address it actually landed on). |
-| `list_devices` | Every device profile with its browsers and system versions, plus the `set_devices` format (`device-id[:browser[:version]]`). |
-| `set_devices` | `["iphone-15:chrome", "pixel-8", "custom:1280x800:windows:laptop"]` |
-| `navigate` / `reload` | Open or reload and wait until the devices have loaded; reports where each device ended up. |
-| `screenshot` | PNGs (≤1000px wide), visible part or `full_page`. |
+| `get_status` / `get_app_state` | Whether the app is responding; address, tabs, layout and every device. |
+| `list_devices` / `set_devices` | Device profiles, e.g. `["iphone-15:chrome", "pixel-8", "custom:1280x800:windows:laptop"]`. |
+| `navigate` / `reload` | Open or reload and wait until the devices have loaded. |
+| `screenshot` | PNGs of the visible part or the `full_page`. |
 | `read_page` | Title, address and text. |
 | `click` / `type_text` | By CSS selector. |
-| `run_script` | Body of an async function; `return` a JSON-able value. One device → the value; several → `[{device, value \| error}]`. Default timeout 10s (max 60s). |
-| `check_layout` | Horizontal scrolling, elements wider than the viewport, text below `min_font_px` (12), tap targets below `min_tap_px` (24) on touch devices. |
+| `run_script` | Run JavaScript on one or more devices and return the result. |
+| `check_layout` | Sideways scrolling, overflowing elements, tiny text and small tap targets. |
 
-`device` accepts `all`, a pane id, a device id or part of a name. Left out, it means the focused device in Focus layout; otherwise every device for `screenshot`, `click`, `type_text`, `reload` and `check_layout`, and the first device for `read_page` and `run_script`.
-- Shortcuts: `Ctrl+L` address, `Ctrl+R` reload all, `Ctrl` `+`/`-` zoom, `Esc` leave focus mode.
+`device` accepts `all`, a pane id, a device id or part of a name.
+</details>
 
-## Building it yourself
+## Stats
 
-### 1. Install the requirements (once per machine)
+<p align="center">
+  <img src="https://github.com/dhia-eddine-mahdaoui/devicedeck/raw/metrics-renders/metrics.svg" alt="DeviceDeck repository metrics">
+</p>
 
-| What | Version | How |
-| --- | --- | --- |
-| Git | any | https://git-scm.com |
-| Node.js | 20 or newer (see `.nvmrc`) | https://nodejs.org, or `nvm use` |
-| Rust (rustup) | picked automatically from `src-tauri/rust-toolchain.toml` (1.91.0) | https://rustup.rs |
-| System build tools | see below | |
+## Build from source
 
-System build tools, per OS ([full Tauri list](https://tauri.app/start/prerequisites/)):
+Requirements: [Node.js](https://nodejs.org) 20+, [Rust](https://rustup.rs) (the version is picked automatically) and the [Tauri system dependencies](https://tauri.app/start/prerequisites/) for your OS.
 
-- **Windows 10/11:** "Desktop development with C++" from [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/). WebView2 is already part of Windows 10/11.
-- **macOS:** `xcode-select --install`
-- **Linux (Debian/Ubuntu):**
-  `sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev`
-
-Some features (DevTools-protocol device emulation, window tricks) use WebView2 and work fully only on **Windows**. On macOS and Linux the app builds and runs with fewer faking powers.
-
-### 2. Get the code and build
-
-```
-git clone <this repo's URL>
+```bash
+git clone https://github.com/dhia-eddine-mahdaoui/devicedeck.git
 cd devicedeck
-npm ci               # exact dependency versions from package-lock.json
-npm run desktop      # builds the .exe and .msi into src-tauri/target/release/bundle
+npm ci
+npm run desktop   # installers land in src-tauri/target/release/bundle
 ```
-
-The same command works on macOS (`.app` + `.dmg`) and Linux (`.deb`, `.rpm`, `.AppImage`); installers land in `src-tauri/target/release/bundle`.
-
-`npm run build` builds only the interface into `dist/` (also usable as a plain website, with fewer faking powers).
-
-### Project layout
-
-| Path | What it is |
-| --- | --- |
-| `index.html`, `src/` | The interface (plain JavaScript + Vite) |
-| `src/helper.js` | Script put into every device page to fake the device |
-| `extension/` | Optional Chrome extension ("DeviceDeck Connector") for the plain-website version |
-| `public/` | Static files (demo page) |
-| `src-tauri/` | Desktop app (Rust + Tauri 2): windows, device panes, MCP server |
-| `.github/workflows/release.yml` | Builds and publishes installers for Windows, macOS and Linux |
-| `.github/workflows/ci.yml` | Checks every push and pull request compiles on all three |
-
-No secrets or API keys are needed to build or run DeviceDeck.
-
-New releases: GitHub → Actions → "Release" → Run workflow, enter a version like `v1.0.1`.
 
 ## Security
 
-The MCP server listens only on `127.0.0.1` and refuses requests coming from web pages (any `Origin` other than `http://localhost` / `http://127.0.0.1`) or addressed to any other host name (DNS rebinding). Anything running on your own computer can still reach it while DeviceDeck is open, as with any local developer tool. Report security problems through GitHub's private vulnerability reporting (Security tab → "Report a vulnerability").
+The MCP server listens only on `127.0.0.1` and refuses requests from web pages and DNS-rebinding attempts. DeviceDeck has no telemetry and needs no API keys. Please report security issues through GitHub's private vulnerability reporting (Security tab).

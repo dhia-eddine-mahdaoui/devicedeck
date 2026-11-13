@@ -1,0 +1,35 @@
+name: Metrics
+
+# Renders metrics.svg (stars, activity, languages, lines of code, issues and pull
+# requests) with lowlighter/metrics and commits it to the `metrics-renders` branch,
+# so `main` keeps a clean history. The README shows the image from that branch.
+#
+# Needs a repository secret METRICS_TOKEN: a *classic* personal access token
+# with the `repo` scope (fine-grained tokens are not supported by the action).
+on:
+  schedule:
+    - cron: "0 3 * * *" # every day at 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: lowlighter/metrics@v3.34
+        with:
+          token: ${{ secrets.METRICS_TOKEN }}
+          template: repository
+          user: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          filename: metrics.svg
+          output_action: commit
+          committer_branch: metrics-renders
+          config_timezone: Europe/Istanbul
+          plugin_languages: yes
+          plugin_languages_details: percentage
+          plugin_lines: yes
+          plugin_lines_delay: 30
+          plugin_followup: yes
