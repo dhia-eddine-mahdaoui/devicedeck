@@ -30,6 +30,8 @@
     "allow-pane-raise",
     "allow-save-screenshot",
     "allow-open-path",
-    "allow-mcp-reply"
+    "allow-mcp-reply",
+    "updater:default",
+    "process:allow-restart"
   ]
 }

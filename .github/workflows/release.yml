@@ -7,8 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release tag, e.g. v1.0.1"
+        description: "Release tag, e.g. v1.0.1 (bump the version in tauri.conf.json, package.json and Cargo.toml first)"
         required: true
+      changes:
+        description: "What changed (shown to users in the app's update window)"
+        required: false
+        default: "Improvements and fixes."
 
 permissions:
   contents: write
@@ -58,10 +62,17 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the update files so installed apps only accept updates from this repository.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.event.inputs.version }}
           releaseName: DeviceDeck ${{ github.event.inputs.version }}
           releaseBody: |
+            ${{ github.event.inputs.changes }}
+
+            ---
+
             | System | Download |
             | --- | --- |
             | Windows 10 / 11 | `DeviceDeck_*_x64-setup.exe` (recommended) or `.msi` |
@@ -75,3 +86,4 @@ jobs:
             Until then: Windows SmartScreen → "More info" → "Run anyway". macOS: if it says the app "is damaged", run `xattr -cr /Applications/DeviceDeck.app` once.
           releaseDraft: false
           args: ${{ matrix.args }}
+          includeUpdaterJson: true

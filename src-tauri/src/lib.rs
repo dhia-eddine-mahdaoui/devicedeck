@@ -311,6 +311,9 @@ fn dd_event(app: AppHandle, webview: Webview, payload: serde_json::Value) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Updates: checks the latest GitHub release, verifies its signature, installs and restarts.
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![
             pane_open,
             pane_layout,

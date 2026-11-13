@@ -1,5 +1,6 @@
 import './style.css';
 import helperSource from './helper.js?raw';
+import { initUpdater } from './updater.js';
 import {
   DEVICES, GROUPS, OS_LABEL, BROWSERS_BY_OS, BROWSER_LABEL, DEFAULT_BROWSER, PRESETS, OS_VERSIONS,
   findDevice, resolvePane, osVersionLabel, screenShape,
@@ -2086,6 +2087,7 @@ $('#btn-scheme').addEventListener('click', () => {
 // In Focus layout only the device on screen is photographed.
 $('#btn-shot-all').addEventListener('click', () => screenshotPanes(activePanes(), true));
 $('#btn-ai').addEventListener('click', () => openDialog('#dlg-ai'));
+initUpdater({ openDialog, toast });
 $('#btn-frames').addEventListener('click', () => {
   state.frames = !state.frames;
   $('#btn-frames').classList.toggle('on', state.frames);
